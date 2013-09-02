@@ -89,6 +89,11 @@ html {
 }
 
 /* line 12, ../scss/main.scss */
+.webgl .webgl-nosupport {
+  display: none;
+}
+
+/* line 16, ../scss/main.scss */
 .webgl-nosupport {
   position: absolute;
   width: 100%;
@@ -96,5 +101,4 @@ html {
   top: 0;
   left: 0;
   z-index: 999;
-  display: none;
 }
