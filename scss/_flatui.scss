@@ -1,0 +1,124 @@
+@import "compass/css3";
+@import "icons/*.png";
+@include all-icons-sprites;
+
+a {
+    text-decoration:none;
+    color: #333;
+    font-weight:bold;
+    border-bottom: 1px dotted #2cbb9c;
+    &:hover {
+        color: #2cbb9c;
+    }
+}
+
+%button {
+	cursor: pointer;
+}
+%green-border-top {
+    border-top: 15px #2cbb9c solid;
+}
+
+%green-border-bottom {
+    border-bottom: 15px #2cbb9c solid;
+}
+
+%flat-box {
+    @extend %green-border-bottom;
+    @extend %green-border-top;
+    background: #fff;
+    padding: 15px 0;
+}
+
+%button-big {
+	@extend %button;
+	border:none;
+	height:50px;
+    padding:0 90px;
+    border-radius:2px;
+    font-size:14px;
+}
+
+%button-orange {
+	background: #f54c22;
+	border-bottom: 4px #d41a14 solid;
+    color:#fff;
+    &:hover {
+    	background: #f6633f;
+    }
+    &:active {
+    	background: #da3832;
+    	border-bottom:none;
+    }
+}
+
+%button-green {
+    background: #2cbb9c;
+    border-bottom: 4px #26a581 solid;
+    color:#fff;
+    &:hover {
+        background: #47c5a9;
+    }
+    &:active {
+        background: #42b191;
+        border-bottom:none;
+    }
+}
+
+button.big {
+	@extend %button-big;
+}
+
+.alert {
+    padding: 5px 15px;
+    font-size:18px;
+    font-weight:200;
+    font-family:"Open Sans";
+}
+
+.error {
+    background-color: #f54c22;
+    color: #fff;
+    position:relative;
+    text-align:left;
+    padding: 5px 40px;
+    &:after {
+        position:absolute;
+        top:8px;
+        left:8px;
+        display:block;
+        content:"";
+        width:20px;
+        height:19px;
+        @include icons-sprite(error);
+    } 
+}
+
+%input {
+    background: #f8f7f5;
+    border:none;
+    font-size:18px;
+    font-weight:200;
+    font-family:"Open Sans";
+    color:#c7c7c6;
+}
+
+%input-text {
+    @extend %input;
+    padding: 5px 15px;
+}
+
+%input-label {
+    display:block;
+    background: #c7c7c6;
+    width:50px;
+    height:45px;
+    float:left;
+}
+
+%input-label-icon {
+    margin:10px auto;
+    width:20px;
+    height:24px;
+    display:block;
+}

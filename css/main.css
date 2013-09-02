@@ -1,0 +1,100 @@
+/* line 66, icons/*.png */
+.icons-sprite, .icons-error, .icons-lockpad, .icons-person, .icons-tick, .error:after {
+  background: url('/img/icons-s70105d56f5.png') no-repeat;
+}
+
+/* line 60, ../../../../../Library/Ruby/Gems/1.8/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/utilities/sprites/_base.scss */
+.icons-error {
+  background-position: 0 -48px;
+}
+
+/* line 60, ../../../../../Library/Ruby/Gems/1.8/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/utilities/sprites/_base.scss */
+.icons-lockpad {
+  background-position: 0 -23px;
+}
+
+/* line 60, ../../../../../Library/Ruby/Gems/1.8/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/utilities/sprites/_base.scss */
+.icons-person {
+  background-position: 0 0;
+}
+
+/* line 60, ../../../../../Library/Ruby/Gems/1.8/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/utilities/sprites/_base.scss */
+.icons-tick {
+  background-position: 0 -67px;
+}
+
+/* line 5, ../scss/_flatui.scss */
+a {
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+  border-bottom: 1px dotted #2cbb9c;
+}
+/* line 10, ../scss/_flatui.scss */
+a:hover {
+  color: #2cbb9c;
+}
+
+/* line 15, ../scss/_flatui.scss */
+button.big {
+  cursor: pointer;
+}
+
+/* line 33, ../scss/_flatui.scss */
+button.big {
+  border: none;
+  height: 50px;
+  padding: 0 90px;
+  border-radius: 2px;
+  font-size: 14px;
+}
+
+/* line 72, ../scss/_flatui.scss */
+.alert {
+  padding: 5px 15px;
+  font-size: 18px;
+  font-weight: 200;
+  font-family: "Open Sans";
+}
+
+/* line 79, ../scss/_flatui.scss */
+.error {
+  background-color: #f54c22;
+  color: #fff;
+  position: relative;
+  text-align: left;
+  padding: 5px 40px;
+}
+/* line 85, ../scss/_flatui.scss */
+.error:after {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: block;
+  content: "";
+  width: 20px;
+  height: 19px;
+  background-position: 0 -48px;
+}
+
+/* line 3, ../scss/main.scss */
+html {
+  font-family: "Open Sans", Verdana, Arial, sans-serif;
+}
+
+/* line 7, ../scss/main.scss */
+.scene {
+  width: 100%;
+  height: 100%;
+}
+
+/* line 12, ../scss/main.scss */
+.webgl-nosupport {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  display: none;
+}
