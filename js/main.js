@@ -1,13 +1,13 @@
 var ROLLERCOASTER = (function() {
 	//private vars
-	var _config, _renderer, _stats = false, _gui = false;
+	var _config, renderer, scene, camera, _gl, _stats = false, _gui = false;
 
 	_config = {
 		x: 5
 	};
 
 	var onWindowResize = function() {
-		_renderer.setSize( window.innerWidth, window.innerHeight );
+		renderer.setSize( window.innerWidth, window.innerHeight );
 	},
 	prepareEvents = function() {
 		$(window).resize(onWindowResize);
@@ -22,8 +22,12 @@ var ROLLERCOASTER = (function() {
 		if(opts.controls) showControls();
 	},
 	generateScene = function() {
-		_renderer = new ENGINE.Renderer();
-        _renderer.setSize( window.innerWidth, window.innerHeight );
+		renderer = new ENGINE.Renderer();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        scene = new ENGINE.Scene();
+
+        _gl = renderer.getContext();
 	},
 	animate = function () {
 		requestAnimationFrame( animate );
@@ -31,7 +35,7 @@ var ROLLERCOASTER = (function() {
 		if(_stats) _stats.update();
 	},
 	render = function() {
-		_renderer.render();
+		renderer.render();
 	},
 	showStats = function() {
 		_stats = new Stats();
@@ -50,6 +54,7 @@ var ROLLERCOASTER = (function() {
 	};
 	
 	return {
-		start : init
+		start : init,
+		gl: function() {return renderer}
 	}
 })();
