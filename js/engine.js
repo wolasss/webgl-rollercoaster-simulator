@@ -60,7 +60,8 @@ ENGINE.Renderer = function( opts ) {
 
 		Object.rotateY(window.y);
 		camera.rotateY(window.x);
-		//camera.updateMatrix();
+		camera.setPosition(0,window.z,8);
+		camera.updateMatrix();
 		camera.invertMatrix();
 
 	    //Bind it as The Current Buffer  
@@ -234,7 +235,12 @@ ENGINE.Object3D.prototype = {
 		mat4.rotateY(this.matrix, this.matrix, this.rotation[1]);
 		mat4.rotateZ(this.matrix, this.matrix, this.rotation[2]);
 		mat4.translate(this.matrix, this.matrix, this.position);
-		if(typeof(this.lookAtMatrix)!=='undefined') mat4.multiply(this.matrix, this.lookAtMatrix, this.matrix);
+		if(typeof(this.lookAtMatrix)!=='undefined') {
+			//console.log(this.lookAtMatrix);
+			this.lookAt(this.lookAtCoor[0],this.lookAtCoor[1],this.lookAtCoor[2]);
+			this.matrix=this.lookAtMatrix;
+			//mat4.multiply(this.matrix, this.lookAtMatrix, this.matrix);
+		}
 		this.matrixWorldNeedsUpdate = true;
 	}
 };
@@ -261,6 +267,7 @@ ENGINE.Scene.prototype.add = function(obj) {
 	obj.parent = this;
 	ENGINE._gui.add(window, 'x',true);
 	ENGINE._gui.add(window, 'y',true);
+	ENGINE._gui.add(window, 'z',true);
 	return this.__objects.push(obj);
 }
 
@@ -270,7 +277,7 @@ ENGINE.Camera = function () {
 
 	this.matrixWorldInverse = mat4.create();
 	//this.matrixInversed = mat4.create();
-	this.lookAtMatrix = mat4.create();
+	
 	this.projectionMatrix = mat4.create();
 	this.projectionMatrixInverse = mat4.create();
 
@@ -295,9 +302,14 @@ ENGINE.PerspectiveCamera.prototype = Object.create( ENGINE.Camera.prototype );
 
 
 ENGINE.PerspectiveCamera.prototype.lookAt = function ( x,y,z ) {
-	var vector = vec3.create();
+	this.lookAtMatrix = mat4.create();
+	this.lookAtCoor = vec3.create();
+	vec3.set(this.lookAtCoor,x,y,z);
+	var vector = vec3.create(), position = vec3.create();
 	vec3.set(vector,x,y,z);
-	mat4.lookAt(this.lookAtMatrix, this.position, vector, this.up);
+	vec3.set(position,this.matrix[12],this.matrix[13],this.matrix[14]);
+	mat4.lookAt(this.lookAtMatrix, position, vector, this.up);
+	mat4.invert(this.lookAtMatrix,this.lookAtMatrix);
 };
 
 ENGINE.PerspectiveCamera.prototype.updateProjectionMatrix = function () { 

@@ -31,13 +31,17 @@ var ROLLERCOASTER = (function() {
         camera = new ENGINE.PerspectiveCamera(45.0, 0.1, 2000.0);
         camera.setPosition(0,3,9);
 
-        camera.lookAt(0,0,2);
+        //camera.lookAt(0,0,2);
         //console.log(camera);
 		var numFs = 6;
   		var radius = 6;
-
+  		var cos,cos1;
+  		cos = Math.cos(1 * Math.PI * 2 / numFs) * radius;
+  		cos1 = Math.sin(1 * Math.PI * 2 / numFs) * radius;
+  		camera.lookAt(cos,0,cos1+2);
         for(var i=0; i<numFs; i++) {
         	var angle = i * Math.PI * 2 / numFs;
+
 	        var plane = new ENGINE.BasicMesh({
 	        	pos : {
 	        		x: Math.cos(angle) * radius,
@@ -86,7 +90,7 @@ var ROLLERCOASTER = (function() {
 	        		}
 	        	});
 
-	        	scene.add( roller );
+	        	//scene.add( roller );
 	        	
 	        }
     	);
