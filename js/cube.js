@@ -2,10 +2,10 @@ var ENGINE = ENGINE || {};
 
 
 ENGINE.Cube = {
-    Rotation : 90,
+    Rotation : 0,
     Vertices : [ // X, Y, Z Coordinates
     
-       1.0,  1.0,  -1.0,  
+        1.0,  1.0,  -1.0,  
          1.0, -1.0,  -1.0,  
         -1.0,  1.0,  -1.0,  
         -1.0, -1.0,  -1.0,  

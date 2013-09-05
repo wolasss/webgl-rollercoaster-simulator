@@ -46,6 +46,11 @@ ENGINE.Renderer = function( opts ) {
 	window.y = 0;
 	window.z = 0;
 	window.calls = 0;
+
+	var VertexBuffer; //Create a New Buffer  
+	var TextureBuffer;  
+	var TriangleBuffer; 
+
 	this.renderObject = function(Object, Texture, camera) {
 		PerspectiveMatrix = camera.projectionMatrix;
 
@@ -55,9 +60,7 @@ ENGINE.Renderer = function( opts ) {
 		Object.rotateY(window.y);
 		camera.rotateY(window.x);
 
-		TransformMatrix = Object.matrix;
 
-		 var VertexBuffer = _gl.createBuffer(); //Create a New Buffer  
 	    //Bind it as The Current Buffer  
 	    _gl.bindBuffer(_gl.ARRAY_BUFFER, VertexBuffer);  
 	  
@@ -68,12 +71,12 @@ ENGINE.Renderer = function( opts ) {
 	    _gl.vertexAttribPointer(VertexPosition, 3, _gl.FLOAT, false, 0, 0);  
 	  
 	    //Repeat For The next Two  
-	    var TextureBuffer = _gl.createBuffer();  
+
 	    _gl.bindBuffer(_gl.ARRAY_BUFFER, TextureBuffer);  
 	    _gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(Object.Texture), _gl.STATIC_DRAW);  
 	    _gl.vertexAttribPointer(VertexTexture, 2, _gl.FLOAT, false, 0, 0);
 
-	     var TriangleBuffer = _gl.createBuffer();  
+ 
 	    _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, TriangleBuffer);  
 	    _gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(Object.Triangles), _gl.STATIC_DRAW);
 
@@ -151,6 +154,9 @@ ENGINE.Renderer = function( opts ) {
 	function initGL() {
 	 	_gl = create3DContext(_canvas);
 	 	ENGINE.__gl = _gl;
+	 	VertexBuffer = _gl.createBuffer();
+	 	TextureBuffer = _gl.createBuffer();
+	 	TriangleBuffer = _gl.createBuffer()
 	}
 
 	initGL();
@@ -357,6 +363,8 @@ ENGINE.BasicMesh = function(opts) {
 
 	this.name = opts.name || '';
 	opts.pos = opts.pos || {};
+	opts.scale = opts.scale || {};
+	opts.rotation = opts.rotation || {};
 	vec3.set(this.position, (opts.pos.x ? opts.pos.x : 0),(opts.pos.y ? opts.pos.y : 0),(opts.pos.z ? opts.pos.z : 0));
 	vec3.set(this.scale, (opts.scale.x ? opts.scale.x : 1),(opts.scale.y ? opts.scale.y : 1),(opts.scale.z ? opts.scale.z : 1));
 	vec3.set(this.rotation, (opts.rotation.x ? opts.rotation.x : 0),(opts.rotation.y ? opts.rotation.y : 0),(opts.rotation.z ? opts.rotation.z : 0));

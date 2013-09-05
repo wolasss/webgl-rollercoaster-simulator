@@ -29,7 +29,7 @@ var ROLLERCOASTER = (function() {
 
         scene = new ENGINE.Scene();
         camera = new ENGINE.PerspectiveCamera(45.0, 0.1, 2000.0);
-        camera.setPosition(0,0,9);
+        camera.setPosition(0,3,9);
         console.log(camera);
 		var numFs = 6;
   		var radius = 6;
@@ -62,6 +62,32 @@ var ROLLERCOASTER = (function() {
 
 	        scene.add( plane );
         }
+
+        obj_utils.downloadMeshes(
+	        {
+	            'rollercoaster': 'models/roller.obj'
+	        },
+	        function(meshes){ 
+	        	console.log(meshes);
+	        	var roller = new ENGINE.BasicMesh({
+	        		pos: {
+	        			x: 0, y: 0, z: 0
+	        		},
+	        		scale : {
+	        			x: 5, y : 5 , z: 5
+	        		},
+	        		vertexArr : meshes.rollercoaster.vertices,
+	        		triangleArr : meshes.rollercoaster.indices,
+	        		textureArr : meshes.rollercoaster.textures,
+	        		texture : {
+	        			imageSrc : 'textures/ash_uvgrid01.jpg'
+	        		}
+	        	});
+
+	        	scene.add( roller );
+	        	
+	        }
+    	);
         
 	},
 	animate = function () {
