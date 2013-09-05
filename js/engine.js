@@ -50,7 +50,8 @@ ENGINE.Renderer = function( opts ) {
 	var VertexBuffer; //Create a New Buffer  
 	var TextureBuffer;  
 	var TriangleBuffer; 
-
+ 	var matrix = mat4.create();
+ 	var pmatrix, tmatrix;
 	this.renderObject = function(Object, Texture, camera) {
 		PerspectiveMatrix = camera.projectionMatrix;
 
@@ -59,13 +60,14 @@ ENGINE.Renderer = function( opts ) {
 
 		Object.rotateY(window.y);
 		camera.rotateY(window.x);
-
+		//camera.updateMatrix();
+		camera.invertMatrix();
 
 	    //Bind it as The Current Buffer  
 	    _gl.bindBuffer(_gl.ARRAY_BUFFER, VertexBuffer);  
 	  
 	    // Fill it With the Data  
-	    _gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(Object.Vertices), _gl.STATIC_DRAW);  
+	    _gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(Object.Vertices), _gl.DYNAMIC_DRAW);  
 	  
 	    //Connect Buffer To Shader's attribute  
 	    _gl.vertexAttribPointer(VertexPosition, 3, _gl.FLOAT, false, 0, 0);  
@@ -73,36 +75,32 @@ ENGINE.Renderer = function( opts ) {
 	    //Repeat For The next Two  
 
 	    _gl.bindBuffer(_gl.ARRAY_BUFFER, TextureBuffer);  
-	    _gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(Object.Texture), _gl.STATIC_DRAW);  
+
+	    _gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(Object.Texture), _gl.DYNAMIC_DRAW);  
 	    _gl.vertexAttribPointer(VertexTexture, 2, _gl.FLOAT, false, 0, 0);
 
  
-	    _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, TriangleBuffer);  
-	    _gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(Object.Triangles), _gl.STATIC_DRAW);
+	    _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, TriangleBuffer); 
+
+	    _gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(Object.Triangles), _gl.DYNAMIC_DRAW);
 
 
         //draw the triangle
-        var matrix = mat4.create();
-        mat4.multiply(matrix, camera.matrixInversed, Object.matrixInversed);
-        //mat4.multiply(matrix, matrix, PerspectiveMatrix);
-        //mat4.multiply(TransformMatrix, TransformMatrix, camera.matrixInversed);   
+       
+        mat4.multiply(matrix, camera.matrixInversed, Object.matrixInversed);   
 
 	    //Set slot 0 as the active Texture  
-	    _gl.activeTexture(_gl.TEXTURE0);  
+	    //_gl.activeTexture(_gl.TEXTURE0);  
 	  
 	    //Load in the Texture To Memory  
 	    _gl.bindTexture(_gl.TEXTURE_2D, Texture);  
 	  
 	    //Update The Texture Sampler in the fragment shader to use slot 0  
-	    _gl.uniform1i(_gl.getUniformLocation(ShaderProgram, "uSampler"), 0);  
+	    //_gl.uniform1i(_gl.getUniformLocation(ShaderProgram, "uSampler"), 0);  
 	  
 	    //Set The Perspective and Transformation Matrices  
-	    var pmatrix = _gl.getUniformLocation(ShaderProgram, "PerspectiveMatrix");  
-	    _gl.uniformMatrix4fv(pmatrix, false, PerspectiveMatrix);  
-	  
-	    var tmatrix = _gl.getUniformLocation(ShaderProgram, "TransformationMatrix");  
+	    _gl.uniformMatrix4fv(pmatrix, false, PerspectiveMatrix);    
 	    _gl.uniformMatrix4fv(tmatrix, false, matrix);  
-	  
 	    //Draw The Triangles  
 	    _gl.drawElements(_gl.TRIANGLES, Object.Triangles.length, _gl.UNSIGNED_SHORT, 0);   
 	}
@@ -115,10 +113,17 @@ ENGINE.Renderer = function( opts ) {
 		renderList = scene.__objects;
 
 		_gl.clear(_gl.COLOR_BUFFER_BIT|_gl.DEPTH_BUFFER_BIT); 
+		
+		camera.updateMatrix();
+		camera.invertMatrix();
+
+	    pmatrix = _gl.getUniformLocation(ShaderProgram, "PerspectiveMatrix");  
+	    tmatrix = _gl.getUniformLocation(ShaderProgram, "TransformationMatrix");  
+
+
+
 		for(var i=0, len=renderList.length; i<len; i++) {
 			//render objects
-			camera.updateMatrix();
-			camera.invertMatrix();
 			this.renderObject(renderList[i], renderList[i].activeTexture.glTex, camera);
 		} 
 		//_gl.viewport(0, 0, _gl.viewportWidth, _gl.viewportHeight);
@@ -198,8 +203,11 @@ ENGINE.Object3D = function() {
 	this.up = vec3.create();
 	vec3.set(this.up, 0,1,0);
 
+	this._static = true; // if there is no animation don't update matrixes all the time
+	this.matrixInit = false; 
 	this.matrix = mat4.create();
 	this.matrixInversed = mat4.create();
+
 	this.matrixWorld = mat4.create();
 	this.matrixWorldNeedsUpdate = true;
 
@@ -221,13 +229,12 @@ ENGINE.Object3D.prototype = {
 	},
 	updateMatrix: function() {
 		this.matrix = mat4.create();
-		
 		mat4.scale(this.matrix, this.matrix, this.scale);
 		mat4.rotateX(this.matrix, this.matrix, this.rotation[0]);
 		mat4.rotateY(this.matrix, this.matrix, this.rotation[1]);
 		mat4.rotateZ(this.matrix, this.matrix, this.rotation[2]);
 		mat4.translate(this.matrix, this.matrix, this.position);
-
+		if(typeof(this.lookAtMatrix)!=='undefined') mat4.multiply(this.matrix, this.lookAtMatrix, this.matrix);
 		this.matrixWorldNeedsUpdate = true;
 	}
 };
@@ -263,6 +270,7 @@ ENGINE.Camera = function () {
 
 	this.matrixWorldInverse = mat4.create();
 	//this.matrixInversed = mat4.create();
+	this.lookAtMatrix = mat4.create();
 	this.projectionMatrix = mat4.create();
 	this.projectionMatrixInverse = mat4.create();
 
@@ -286,10 +294,10 @@ ENGINE.PerspectiveCamera = function( fov, near, far) {
 ENGINE.PerspectiveCamera.prototype = Object.create( ENGINE.Camera.prototype );
 
 
-ENGINE.PerspectiveCamera.prototype.lookAt = function ( vector ) {
-	var m = mat4.create();
-	mat4.lookAt(m, this.position, vector, this.up);
-	mat4.multiply(this.matrix, this.matrix, m);
+ENGINE.PerspectiveCamera.prototype.lookAt = function ( x,y,z ) {
+	var vector = vec3.create();
+	vec3.set(vector,x,y,z);
+	mat4.lookAt(this.lookAtMatrix, this.position, vector, this.up);
 };
 
 ENGINE.PerspectiveCamera.prototype.updateProjectionMatrix = function () { 
