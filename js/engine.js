@@ -8,8 +8,7 @@ ENGINE.Renderer = function( opts ) {
 
 	//internal vars
 	var _gl, _canvas, _shaders,
-	TextureImage, Texture, ShaderProgram, VertexPosition, VertexTexture;
-	var AspectRatio;
+	TextureImage, Texture, ShaderProgram, VertexPosition, VertexTexture,AspectRatio;
 
 	
 
@@ -38,14 +37,26 @@ ENGINE.Renderer = function( opts ) {
 		_canvas.height = height;
 		_canvas.style.width = width + 'px';
 		_canvas.style.height = height + 'px';
-		AspectRatio = _canvas.width / _canvas.height;
+		ENGINE.aspectRatio = _canvas.width / _canvas.height;
 		this.setViewport(0, 0, _canvas.width, _canvas.height);
 	}
-	window.zmienna = 146;
-	window.x =window.innerWidth / window.innerHeight;
-	window.y =1;
-	window.z = 10000.0;
-	this.renderObject = function(Object, Texture) {
+	var TransformMatrix = mat4.create(),
+	PerspectiveMatrix;
+	window.x = 0;
+	window.y = 0;
+	window.z = 0;
+	window.calls = 0;
+	this.renderObject = function(Object, Texture, camera) {
+		PerspectiveMatrix = camera.projectionMatrix;
+
+		Object.updateMatrix();
+		Object.invertMatrix();
+
+		Object.rotateY(window.y);
+		camera.rotateY(window.x);
+
+		TransformMatrix = Object.matrix;
+
 		 var VertexBuffer = _gl.createBuffer(); //Create a New Buffer  
 	    //Bind it as The Current Buffer  
 	    _gl.bindBuffer(_gl.ARRAY_BUFFER, VertexBuffer);  
@@ -66,12 +77,13 @@ ENGINE.Renderer = function( opts ) {
 	    _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, TriangleBuffer);  
 	    _gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(Object.Triangles), _gl.STATIC_DRAW);
 
-	    //Generate The Perspective Matrix 
-		
-	    var PerspectiveMatrix = MakePerspective(window.zmienna, window.x, window.y, window.z);  
-	  
-	    var TransformMatrix = Object.GetTransforms();  
-	  
+
+        //draw the triangle
+        var matrix = mat4.create();
+        mat4.multiply(matrix, camera.matrixInversed, Object.matrixInversed);
+        //mat4.multiply(matrix, matrix, PerspectiveMatrix);
+        //mat4.multiply(TransformMatrix, TransformMatrix, camera.matrixInversed);   
+
 	    //Set slot 0 as the active Texture  
 	    _gl.activeTexture(_gl.TEXTURE0);  
 	  
@@ -83,15 +95,15 @@ ENGINE.Renderer = function( opts ) {
 	  
 	    //Set The Perspective and Transformation Matrices  
 	    var pmatrix = _gl.getUniformLocation(ShaderProgram, "PerspectiveMatrix");  
-	    _gl.uniformMatrix4fv(pmatrix, false, new Float32Array(PerspectiveMatrix));  
+	    _gl.uniformMatrix4fv(pmatrix, false, PerspectiveMatrix);  
 	  
 	    var tmatrix = _gl.getUniformLocation(ShaderProgram, "TransformationMatrix");  
-	    _gl.uniformMatrix4fv(tmatrix, false, new Float32Array(TransformMatrix));  
+	    _gl.uniformMatrix4fv(tmatrix, false, matrix);  
 	  
 	    //Draw The Triangles  
 	    _gl.drawElements(_gl.TRIANGLES, Object.Triangles.length, _gl.UNSIGNED_SHORT, 0);   
 	}
-	this.render  = function ( scene, camera, renderTarget) {
+	this.render  = function ( scene, camera) {
 		if ( camera instanceof ENGINE.Camera === false ) {
 			return;
 		}
@@ -102,11 +114,11 @@ ENGINE.Renderer = function( opts ) {
 		_gl.clear(_gl.COLOR_BUFFER_BIT|_gl.DEPTH_BUFFER_BIT); 
 		for(var i=0, len=renderList.length; i<len; i++) {
 			//render objects
-			this.renderObject(renderList[i], renderList[i].activeTexture.glTex);
+			camera.updateMatrix();
+			camera.invertMatrix();
+			this.renderObject(renderList[i], renderList[i].activeTexture.glTex, camera);
 		} 
 		//_gl.viewport(0, 0, _gl.viewportWidth, _gl.viewportHeight);
-
-		//this.renderObject(renderList[0], Texture);
 
 	}
 
@@ -126,20 +138,6 @@ ENGINE.Renderer = function( opts ) {
 	  return context;
 	}
 
-	function MakePerspective(FOV, AspectRatio, Closest, Farest){  
-	    var YLimit = Closest * Math.tan(FOV * Math.PI / 360);  
-	    var A = -( Farest + Closest ) / ( Farest - Closest );  
-	    var B = -2 * Farest * Closest / ( Farest - Closest );  
-	    var C = (2 * Closest) / ( (YLimit * AspectRatio) * 2 );  
-	    var D = (2 * Closest) / ( YLimit * 2 );  
-	    return [  
-	        C, 0, 0, 0,  
-	        0, D, 0, 0,  
-	        0, 0, A, -1,  
-	        0, 0, B, 0  
-	    ];  
-	}  
-
 	function setDefaultGLState () {
 		_gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
 		_gl.clearDepth( 1 );
@@ -153,12 +151,6 @@ ENGINE.Renderer = function( opts ) {
 	function initGL() {
 	 	_gl = create3DContext(_canvas);
 	 	ENGINE.__gl = _gl;
-	 	TextureImage = new Image();  
-  
-	    TextureImage.onload = function(){  
-	    	Texture = LoadTexture(TextureImage); 
-	    } 
-   		TextureImage.src = "/rollercoaster/textures/grasslight-small.jpg"; 
 	}
 
 	initGL();
@@ -190,13 +182,57 @@ ENGINE.Object3D = function() {
 	this.parent = undefined;
 	this.children = [];
 
+	this.position = vec3.create();
+	vec3.set(this.position,0,0,0);
+	this.scale = vec3.create();
+	vec3.set(this.scale,1,1,1);
+	this.rotation = vec3.create();
+	vec3.set(this.rotation,0,0,0);
+
+	this.up = vec3.create();
+	vec3.set(this.up, 0,1,0);
+
 	this.matrix = mat4.create();
+	this.matrixInversed = mat4.create();
 	this.matrixWorld = mat4.create();
+	this.matrixWorldNeedsUpdate = true;
+
 };
 
 ENGINE.Object3D.prototype = {
-	constructor: ENGINE.Object3D
+	constructor: ENGINE.Object3D,
+	scale : function(vector) {
+		this.scale = vector;
+	},
+	rotateX : function(rad) {
+		this.rotation[0] = rad;
+	},
+	rotateY : function(rad) {
+		this.rotation[1] = rad;
+	},
+	rotateZ : function(rad) {
+		this.rotation[2] = rad;
+	},
+	updateMatrix: function() {
+		this.matrix = mat4.create();
+		
+		mat4.scale(this.matrix, this.matrix, this.scale);
+		mat4.rotateX(this.matrix, this.matrix, this.rotation[0]);
+		mat4.rotateY(this.matrix, this.matrix, this.rotation[1]);
+		mat4.rotateZ(this.matrix, this.matrix, this.rotation[2]);
+		mat4.translate(this.matrix, this.matrix, this.position);
+
+		this.matrixWorldNeedsUpdate = true;
+	}
 };
+
+ENGINE.Object3D.prototype.setPosition = function(x,y,z) {
+	vec3.set(this.position, x,y,z);
+}
+ENGINE.Object3D.prototype.invertMatrix = function () {
+	mat4.invert(this.matrixInversed, this.matrix);
+}
+
 
 ENGINE.Scene = function() {
 	ENGINE.Object3D.call(this);
@@ -208,25 +244,11 @@ ENGINE.Scene = function() {
 ENGINE.Scene.prototype = Object.create( ENGINE.Object3D.prototype );
 
 ENGINE.Scene.prototype.add = function(obj) { 
-	ENGINE._gui.add(obj, 'Rotation');
-	ENGINE._gui.add(obj.rotation, 'x', true);
-	ENGINE._gui.add(obj.rotation, 'y');
-	ENGINE._gui.add(obj.rotation, 'z');
-	ENGINE._gui.add(obj.scale, 'x');
-	ENGINE._gui.add(obj.scale, 'y');
-	ENGINE._gui.add(obj.scale, 'z');
-	ENGINE._gui.add(obj.pos, 'x');
-	ENGINE._gui.add(obj.pos, 'y');
-	ENGINE._gui.add(obj.pos, 'z');
-	ENGINE._gui.add(window, 'zmienna');
-	ENGINE._gui.add(window, 'x');
-	ENGINE._gui.add(window, 'y');
-	ENGINE._gui.add(window, 'z');
-
 	this.children.push(obj);
 	obj.parent = this;
-	return this.__objects.push(obj)
-	;
+	ENGINE._gui.add(window, 'x',true);
+	ENGINE._gui.add(window, 'y',true);
+	return this.__objects.push(obj);
 }
 
 ENGINE.Camera = function () {
@@ -234,7 +256,7 @@ ENGINE.Camera = function () {
 	ENGINE.Object3D.call( this );
 
 	this.matrixWorldInverse = mat4.create();
-
+	//this.matrixInversed = mat4.create();
 	this.projectionMatrix = mat4.create();
 	this.projectionMatrixInverse = mat4.create();
 
@@ -243,21 +265,31 @@ ENGINE.Camera = function () {
 ENGINE.Camera.prototype = Object.create( ENGINE.Object3D.prototype );
 
 
-ENGINE.Camera.prototype.lookAt = function () {
 
-	// This routine does not support cameras with rotated and/or translated parent(s)
+ENGINE.PerspectiveCamera = function( fov, near, far) {
+	ENGINE.Camera.call( this );
 
-	var m1 = mat4.create();
+	this.fov = fov !== undefined ? fov : 45;
+	this.aspect = ENGINE.aspectRatio;
+	this.near = near !== undefined ? near : 0.1;
+	this.far = far !== undefined ? far : 2000;
 
-	return function ( vector ) {
+	this.updateProjectionMatrix();
+}
 
-		m1.lookAt( this.position, vector, this.up );
+ENGINE.PerspectiveCamera.prototype = Object.create( ENGINE.Camera.prototype );
 
-		//this.quaternion.setFromRotationMatrix( m1 );
 
-	};
+ENGINE.PerspectiveCamera.prototype.lookAt = function ( vector ) {
+	var m = mat4.create();
+	mat4.lookAt(m, this.position, vector, this.up);
+	mat4.multiply(this.matrix, this.matrix, m);
+};
 
-}();
+ENGINE.PerspectiveCamera.prototype.updateProjectionMatrix = function () { 
+	mat4.perspective(this.projectionMatrix, this.fov, this.aspect, this.near, this.far );
+	mat4.invert(this.projectionMatrixInverse, this.projectionMatrix);
+}
 
 ENGINE.Shaders = function() {
 	var _gl = ENGINE.__gl, ShaderProgram, Code;
@@ -321,23 +353,13 @@ ENGINE.Shaders = function() {
 }
 
 ENGINE.BasicMesh = function(opts) {
+	ENGINE.Object3D.call(this);
+
 	this.name = opts.name || '';
 	opts.pos = opts.pos || {};
-	this.pos = {
-		x: opts.pos.x || 0,
-		y: opts.pos.y || 0,
-		z: opts.pos.z || 0
-	};
-	this.scale = {
-		x: opts.scale.x || 0,
-		y: opts.scale.y || 0,
-		z: opts.scale.z || 0
-	};
-	this.rotation = {
-		x: opts.rotation.x || 0,
-		y: opts.rotation.y || 0,
-		z: opts.rotation.z || 0
-	},
+	vec3.set(this.position, (opts.pos.x ? opts.pos.x : 0),(opts.pos.y ? opts.pos.y : 0),(opts.pos.z ? opts.pos.z : 0));
+	vec3.set(this.scale, (opts.scale.x ? opts.scale.x : 1),(opts.scale.y ? opts.scale.y : 1),(opts.scale.z ? opts.scale.z : 1));
+	vec3.set(this.rotation, (opts.rotation.x ? opts.rotation.x : 0),(opts.rotation.y ? opts.rotation.y : 0),(opts.rotation.z ? opts.rotation.z : 0));
 	this.Vertices = opts.vertexArr;
 	this.Rotation = 0;
 	opts.triangleArr = opts.triangleArr || [];
@@ -346,59 +368,8 @@ ENGINE.BasicMesh = function(opts) {
     this.Texture = opts.textureArr || [];
     opts.texture = opts.texture || {};
     this.texUrl = opts.texture.imageSrc;
-    if(this.texUrl) this.activeTexture = new ENGINE.Texture(this.texUrl);
+    if(this.texUrl) this.activeTexture = new ENGINE.Texture(this.texUrl); else this.noTexture = true;
     this.ready = false;
-    this.GetTransforms = function () {
-	    
-	    //Create a Blank Identity Matrix
-	    var TMatrix = mat4.create();
-	    
-	    //Scaling
-	    var Temp = mat4.create();
-	    Temp[0] *= this.scale.x;
-	    Temp[5] *= this.scale.y;
-	    Temp[10] *= this.scale.z;
-	    //mat4.multiply(Tmatrix,Temp);
-	    TMatrix = mat4.multiply(TMatrix,TMatrix,Temp);
-	 
-	    //Rotating X
-	    Temp = mat4.create();
-	    var X = this.rotation.x * (Math.PI / 180.0);
-	    Temp[5] = Math.cos(X);
-	    Temp[6] = Math.sin(X);
-	    Temp[9] = -1 * Math.sin(X);
-	    Temp[10] = Math.cos(X);
-	    //TMatrix = MultiplyMatrix(TMatrix, Temp);
-	    TMatrix = mat4.multiply(TMatrix,TMatrix,Temp);
-
-	    //Rotating Y
-	    Temp = mat4.create();
-	    var Y = this.rotation.y * (Math.PI / 180.0);
-	    Temp[0] = Math.cos(Y);
-	    Temp[2] = -1 * Math.sin(Y);
-	    Temp[8] = Math.sin(Y);
-	    Temp[10] = Math.cos(Y);
-	    //TMatrix = MultiplyMatrix(TMatrix, Temp);
-	    TMatrix = mat4.multiply(TMatrix,TMatrix,Temp);
-	 
-	    //Rotating Z
-	    Temp = mat4.create();
-	    var Z = this.rotation.z * (Math.PI / 180.0);
-	    Temp[0] = Math.cos(Z);
-	    Temp[1] = Math.sin(Z);
-	    Temp[4] = -1 * Math.sin(Z);
-	    Temp[5] = Math.cos(Z);
-	    //TMatrix = MultiplyMatrix(TMatrix, Temp);
-	    TMatrix = mat4.multiply(TMatrix,TMatrix,Temp);
-
-	    //Moving
-	    Temp = mat4.create();
-	    Temp[12] = this.pos.x;
-	    Temp[13] = this.pos.y;
-	    Temp[14] = this.pos.z * -1;
-	 
-	    return mat4.multiply(TMatrix,TMatrix,Temp);
-	}
 }
 
 ENGINE.BasicMesh.prototype = Object.create( ENGINE.Object3D.prototype );
@@ -408,13 +379,12 @@ ENGINE.GUI = function() {
 }
 
 ENGINE.GUI.prototype.add = function(obj, val, slider) {
-	if(slider) return this._gui.add(obj, val, -100, 100).step(1);
+	if(slider) return this._gui.add(obj, val, -10, 10).step(.1);
 	return this._gui.add(obj, val);
 }
 
 ENGINE.Texture = function(url) {
 	var _self = this, _gl = ENGINE.__gl;
-	console.log(_gl);
 	this.image = new Image();
     this.ready = false;
     this.image.onload = function () {

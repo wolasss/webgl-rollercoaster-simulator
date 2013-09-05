@@ -6,29 +6,6 @@ var ROLLERCOASTER = (function() {
 		x: 5
 	};
 
-	LoadTexture = function(Img){  
-		console.log('a:', _gl);
-	    //Create a new Texture and Assign it as the active one  
-	    var TempTex = _gl.createTexture();  
-	    _gl.bindTexture(_gl.TEXTURE_2D, TempTex);    
-	      
-	    //Flip Positive Y (Optional)  
-	    _gl.pixelStorei(_gl.UNPACK_FLIP_Y_WEBGL, true);  
-	      
-	    //Load in The Image  
-	    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, Img);    
-	      
-	    //Setup Scaling properties  
-	    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);    
-	    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR_MIPMAP_NEAREST);    
-	    _gl.generateMipmap(_gl.TEXTURE_2D);   
-	      
-	    //Unbind the texture and return it.  
-	    _gl.bindTexture(_gl.TEXTURE_2D, null);  
-	    return TempTex;  
-	};  
-
-
 	var onWindowResize = function() {
 		renderer.setSize( window.innerWidth, window.innerHeight );
 	},
@@ -51,40 +28,40 @@ var ROLLERCOASTER = (function() {
         _gl = renderer.getContext();
 
         scene = new ENGINE.Scene();
-        camera = new ENGINE.Camera();
+        camera = new ENGINE.PerspectiveCamera(45.0, 0.1, 2000.0);
+        camera.setPosition(0,0,9);
+        console.log(camera);
+		var numFs = 6;
+  		var radius = 6;
 
-        var plane = new ENGINE.BasicMesh({
-        	pos : {
-        		x: 0,
-        		y: 0,
-        		z: 0
-        	},
-        	scale : {
-        		x: 18.8,
-        		y: 2.5,
-        		z: 3.2,
-        	},
-        	rotation: {
-        		x: -37.0,
-        		y: 0,
-        		z: 0,
-        	},
-        	vertexArr: [ 1.0,  1.0,  -1.0,
-				         1.0, -1.0,  -1.0,
-				        -1.0,  1.0,  -1.0,
-				        -1.0, -1.0,  -1.0],
-        	triangleArr: [	0, 1, 2,
-       						1, 2, 3],
-        	textureArr: [	8.0, 0.0,
-         					8.0, 8.0,
-         					0.0, 0.0,
-         					0.0, 8.0],
-			texture: {
-				imageSrc: 'textures/grasslight-small.jpg'
-			}
-        });
+        for(var i=0; i<numFs; i++) {
+        	var angle = i * Math.PI * 2 / numFs;
+	        var plane = new ENGINE.BasicMesh({
+	        	pos : {
+	        		x: Math.cos(angle) * radius,
+	        		y: 0,
+	        		z: Math.sin(angle) * radius
+	        	},
+	        	scale : {
+	        		x: 1,
+	        		y: 1,
+	        		z: 1,
+	        	},
+	        	rotation: {
+	        		x: 0,
+	        		y: 0,
+	        		z: 0,
+	        	},
+	        	vertexArr: ENGINE.Cube.Vertices,
+	        	triangleArr: ENGINE.Cube.Triangles,
+	        	textureArr: ENGINE.Cube.Texture,
+				texture: {
+					imageSrc: 'textures/Dirt.jpg'
+				}
+	        });
 
-        scene.add( plane );
+	        scene.add( plane );
+        }
         
 	},
 	animate = function () {
