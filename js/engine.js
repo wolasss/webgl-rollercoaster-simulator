@@ -47,9 +47,6 @@ ENGINE.Renderer = function( opts ) {
 	window.z = 0;
 	window.calls = 0;
 
-	var VertexBuffer; //Create a New Buffer  
-	var TextureBuffer;  
-	var TriangleBuffer; 
  	var matrix = mat4.create();
  	var pmatrix, tmatrix;
 	this.renderObject = function(Object, Texture, camera) {
@@ -60,32 +57,21 @@ ENGINE.Renderer = function( opts ) {
 
 		Object.rotateY(window.y);
 		camera.rotateY(window.x);
-		camera.setPosition(0,window.z,8);
+		camera.setPosition(0,window.z,10);
 		camera.updateMatrix();
 		camera.invertMatrix();
-
+		//console.log(Object);
 	    //Bind it as The Current Buffer  
-	    _gl.bindBuffer(_gl.ARRAY_BUFFER, VertexBuffer);  
-	  
-	    // Fill it With the Data  
-	    _gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(Object.Vertices), _gl.DYNAMIC_DRAW);  
-	  
+	    _gl.bindBuffer(_gl.ARRAY_BUFFER, Object.VertexBuffer);  
+	  	    
 	    //Connect Buffer To Shader's attribute  
 	    _gl.vertexAttribPointer(VertexPosition, 3, _gl.FLOAT, false, 0, 0);  
 	  
-	    //Repeat For The next Two  
-
-	    _gl.bindBuffer(_gl.ARRAY_BUFFER, TextureBuffer);  
-
-	    _gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(Object.Texture), _gl.DYNAMIC_DRAW);  
+	    _gl.bindBuffer(_gl.ARRAY_BUFFER, Object.TextureBuffer);  
 	    _gl.vertexAttribPointer(VertexTexture, 2, _gl.FLOAT, false, 0, 0);
 
  
-	    _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, TriangleBuffer); 
-
-	    _gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(Object.Triangles), _gl.DYNAMIC_DRAW);
-
-
+	    _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, Object.TriangleBuffer); 
         //draw the triangle
        
         mat4.multiply(matrix, camera.matrixInversed, Object.matrixInversed);   
@@ -132,7 +118,6 @@ ENGINE.Renderer = function( opts ) {
 	}
 
 	//internal functions
-
 	function create3DContext(canvas, opt_attribs) {
 	  var names = ["webgl", "experimental-webgl", "webkit-3d", "moz-webgl"];
 	  var context = null;
@@ -160,9 +145,6 @@ ENGINE.Renderer = function( opts ) {
 	function initGL() {
 	 	_gl = create3DContext(_canvas);
 	 	ENGINE.__gl = _gl;
-	 	VertexBuffer = _gl.createBuffer();
-	 	TextureBuffer = _gl.createBuffer();
-	 	TriangleBuffer = _gl.createBuffer()
 	}
 
 	initGL();
@@ -170,6 +152,9 @@ ENGINE.Renderer = function( opts ) {
 	_shaders.init();
 	_gui = new ENGINE.GUI();
 	ENGINE._gui = _gui;
+	ENGINE._gui.add(window, 'x',true);
+	ENGINE._gui.add(window, 'y',true);
+	ENGINE._gui.add(window, 'z',true);
 
 	var shaders_obj = _shaders.create();
 	ShaderProgram = shaders_obj.ShaderProgram;
@@ -263,11 +248,23 @@ ENGINE.Scene = function() {
 ENGINE.Scene.prototype = Object.create( ENGINE.Object3D.prototype );
 
 ENGINE.Scene.prototype.add = function(obj) { 
+	var _gl = ENGINE.__gl;
 	this.children.push(obj);
 	obj.parent = this;
-	ENGINE._gui.add(window, 'x',true);
-	ENGINE._gui.add(window, 'y',true);
-	ENGINE._gui.add(window, 'z',true);
+
+	obj.VertexBuffer = _gl.createBuffer();
+	obj.TextureBuffer = _gl.createBuffer();
+	obj.TriangleBuffer = _gl.createBuffer();
+
+	_gl.bindBuffer(_gl.ARRAY_BUFFER, obj.VertexBuffer);  
+	_gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(obj.Vertices), _gl.STATIC_DRAW); 
+
+	_gl.bindBuffer(_gl.ARRAY_BUFFER, obj.TextureBuffer);  
+	_gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(obj.Texture), _gl.STATIC_DRAW);  
+
+	_gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, obj.TriangleBuffer); 
+	_gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(obj.Triangles), _gl.STATIC_DRAW);
+
 	return this.__objects.push(obj);
 }
 

@@ -29,11 +29,11 @@ var ROLLERCOASTER = (function() {
 
         scene = new ENGINE.Scene();
         camera = new ENGINE.PerspectiveCamera(45.0, 0.1, 2000.0);
-        camera.setPosition(0,3,9);
+        camera.setPosition(0,3,12);
 
         //camera.lookAt(0,0,2);
         //console.log(camera);
-		var numFs = 6;
+		var numFs = 8;
   		var radius = 6;
   		var cos,cos1;
   		cos = Math.cos(1 * Math.PI * 2 / numFs) * radius;
@@ -90,7 +90,7 @@ var ROLLERCOASTER = (function() {
 	        		}
 	        	});
 
-	        	//scene.add( roller );
+	        	scene.add( roller );
 	        	
 	        }
     	);
