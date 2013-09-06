@@ -57,7 +57,9 @@ ENGINE.Renderer = function( opts ) {
 
 		Object.rotateY(window.y);
 		camera.rotateY(window.x);
+		if(window.z<1) window.z=1;
 		camera.setPosition(0,window.z,10);
+
 		camera.updateMatrix();
 		camera.invertMatrix();
 		//console.log(Object);

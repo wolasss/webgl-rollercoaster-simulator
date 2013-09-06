@@ -42,10 +42,10 @@ var ROLLERCOASTER = (function() {
         for(var i=0; i<numFs; i++) {
         	var angle = i * Math.PI * 2 / numFs;
 
-	        var plane = new ENGINE.BasicMesh({
+	        var minecraft = new ENGINE.BasicMesh({
 	        	pos : {
 	        		x: Math.cos(angle) * radius,
-	        		y: 0,
+	        		y: -1,
 	        		z: Math.sin(angle) * radius
 	        	},
 	        	scale : {
@@ -64,6 +64,34 @@ var ROLLERCOASTER = (function() {
 				texture: {
 					imageSrc: 'textures/Dirt.jpg'
 				}
+	        });
+
+	        scene.add( minecraft );
+
+	        var plane = new ENGINE.BasicMesh({
+	        	pos:{
+	        		x:0,y:0,z:0
+	        	},
+	        	scale: {
+	        		x:1,y:1,z:1
+	        	},
+	        	rotation:{
+	        		x:-1.57,
+	        		y:0,
+	        		z:0
+	        	},
+	        	vertexArr: [
+	        	-500,500,0,500,500,0,-500,-500,0,500,-500,0
+	        	],
+	        	triangleArr: [0, 1, 2,
+        						1, 2, 3],
+        		textureArr: [256.0, 0.0,  
+         256.0, 256.0,  
+         0.0, 0.0,  
+         0.0, 256.0],
+         	texture : {
+         		imageSrc: 'textures/grasslight-small-dark.jpg'
+         	}
 	        });
 
 	        scene.add( plane );
