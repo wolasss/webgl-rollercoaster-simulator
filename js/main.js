@@ -3,14 +3,20 @@ var ROLLERCOASTER = (function() {
 	var _config, renderer, scene, camera, _gl, _stats = false, _gui = false;
 
 	_config = {
-		x: 5
+		windowHalfX : window.innerWidth / 2,
+        windowHalfY : window.innerHeight / 2
 	};
 
 	var onWindowResize = function() {
 		renderer.setSize( window.innerWidth, window.innerHeight );
 	},
+	onDocumentMouseMove = function( event ) {
+        window.y = ( event.clientX - _config.windowHalfX ) ;
+        window.z = ( event.clientY - _config.windowHalfY ) ;
+    },
 	prepareEvents = function() {
 		$(window).resize(onWindowResize);
+		$(document).on('mousemove', onDocumentMouseMove);
 	},
 	init = function(opts) {
 		opts = opts || {};
@@ -183,11 +189,6 @@ var ROLLERCOASTER = (function() {
 	showStats = function() {
 		_stats = new Stats();
 		_stats.setMode(0); // 0: fps, 1: ms
-
-		// Align bottom-left
-		_stats.domElement.style.position = 'absolute';
-		_stats.domElement.style.left = '0px';
-		_stats.domElement.style.bottom = '0px';
 
 		document.body.appendChild( _stats.domElement );
 	},

@@ -60,7 +60,8 @@ ENGINE.Renderer = function( opts ) {
 		if(window.z<1) {
 			window.z=1;
 		}
-		camera.setPosition(0,window.z,10);
+		camera.setPosition(( window.y - camera.position[0] ) * .05,(  window.z - camera.position[1] ) * .05,15);
+		//console.log(camera);
 
 		camera.updateMatrix();
 		camera.invertMatrix();
@@ -91,7 +92,7 @@ ENGINE.Renderer = function( opts ) {
 	    }
 	  
 	    //Update The Texture Sampler in the fragment shader to use slot 0  
-	    //_gl.uniform1i(_gl.getUniformLocation(ShaderProgram, "uSampler"), 0);  
+	    _gl.uniform1i(_gl.getUniformLocation(ShaderProgram, "uSampler"), 0);  
 	  
 	    //Set The Perspective and Transformation Matrices  
 

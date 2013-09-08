@@ -89,6 +89,13 @@ html {
 }
 
 /* line 16, ../scss/main.scss */
+#stats {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+}
+
+/* line 22, ../scss/main.scss */
 .loading {
   width: 350px;
   height: 350px;
@@ -97,18 +104,18 @@ html {
   margin-top: 15%;
   padding: 10px 25px;
 }
-/* line 24, ../scss/main.scss */
+/* line 30, ../scss/main.scss */
 .loading h1 {
   margin-top: 0;
   font-weight: 300;
 }
 
-/* line 30, ../scss/main.scss */
+/* line 36, ../scss/main.scss */
 .webgl .webgl-nosupport {
   display: none;
 }
 
-/* line 34, ../scss/main.scss */
+/* line 40, ../scss/main.scss */
 .webgl-nosupport {
   position: absolute;
   width: 100%;
