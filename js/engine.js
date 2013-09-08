@@ -57,7 +57,9 @@ ENGINE.Renderer = function( opts ) {
 
 		Object.rotateY(window.y);
 		camera.rotateY(window.x);
-		if(window.z<1) window.z=1;
+		if(window.z<1) {
+			window.z=1;
+		}
 		camera.setPosition(0,window.z,10);
 
 		camera.updateMatrix();
@@ -327,18 +329,18 @@ ENGINE.Shaders = function() {
 	    var CurrentChild = Script.firstChild;  
 	    while(CurrentChild)  
 	    {  
-	        if(CurrentChild.nodeType == CurrentChild.TEXT_NODE)  
+	        if(CurrentChild.nodeType == CurrentChild.TEXT_NODE) {
 	            Code += CurrentChild.textContent;  
+	        }
 	        CurrentChild = CurrentChild.nextSibling;  
 	    }  
 	    return Code;  
 	} 
 
 	this.init = function() {
-		if(!this.FShader || !this.VShader)  
+		if(!this.FShader || !this.VShader) {
     		alert("Error, Could Not Find Shaders");  
-		else  
-		{  
+		} else  {  
 		    //Load and Compile Fragment Shader  
 		    Code = LoadShader(this.FShader);  
 		    this.FShader = _gl.createShader(_gl.FRAGMENT_SHADER);  
@@ -384,9 +386,11 @@ ENGINE.BasicMesh = function(opts) {
 	opts.pos = opts.pos || {};
 	opts.scale = opts.scale || {};
 	opts.rotation = opts.rotation || {};
+	//todo! mniejsze niz zero odpadaja ten warunke...
+	console.log(this);
 	vec3.set(this.position, (opts.pos.x ? opts.pos.x : 0),(opts.pos.y ? opts.pos.y : 0),(opts.pos.z ? opts.pos.z : 0));
 	vec3.set(this.scale, (opts.scale.x ? opts.scale.x : 1),(opts.scale.y ? opts.scale.y : 1),(opts.scale.z ? opts.scale.z : 1));
-	vec3.set(this.rotation, (opts.rotation.x ? opts.rotation.x : 0),(opts.rotation.y ? opts.rotation.y : 0),(opts.rotation.z ? opts.rotation.z : 0));
+	vec3.set(this.rotation, (opts.rotation.x ? opts.rotation.x : 0), (opts.rotation.y ? opts.rotation.y : 0) ,(opts.rotation.z ? opts.rotation.z : 0));
 	this.Vertices = opts.vertexArr;
 	this.Rotation = 0;
 	opts.triangleArr = opts.triangleArr || [];
@@ -395,7 +399,11 @@ ENGINE.BasicMesh = function(opts) {
     this.Texture = opts.textureArr || [];
     opts.texture = opts.texture || {};
     this.texUrl = opts.texture.imageSrc;
-    if(this.texUrl) this.activeTexture = new ENGINE.Texture(this.texUrl); else this.noTexture = true;
+    if(this.texUrl) {
+    	this.activeTexture = new ENGINE.Texture(this.texUrl); 
+    } else {
+    	this.noTexture = true;
+    }
     this.ready = false;
 }
 
@@ -406,7 +414,9 @@ ENGINE.GUI = function() {
 }
 
 ENGINE.GUI.prototype.add = function(obj, val, slider) {
-	if(slider) return this._gui.add(obj, val, -10, 10).step(.1);
+	if(slider) {
+		return this._gui.add(obj, val, -10, 10).step(.1);
+	}
 	return this._gui.add(obj, val);
 }
 

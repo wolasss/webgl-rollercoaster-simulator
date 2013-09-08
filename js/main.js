@@ -19,8 +19,13 @@ var ROLLERCOASTER = (function() {
 		prepareEvents();
 		animate();
 		
-		if(opts.stats) showStats();
-		if(opts.controls) showControls();
+		if(opts.stats) { 
+			showStats();
+		}
+
+		if(opts.controls) {
+			showControls();
+		}
 	},
 	generateScene = function() {
 		renderer = new ENGINE.Renderer();
@@ -38,7 +43,7 @@ var ROLLERCOASTER = (function() {
   		var cos,cos1;
   		cos = Math.cos(1 * Math.PI * 2 / numFs) * radius;
   		cos1 = Math.sin(1 * Math.PI * 2 / numFs) * radius;
-  		camera.lookAt(cos,0,cos1+2);
+  		camera.lookAt(-8,-6,0);
         for(var i=0; i<numFs; i++) {
         	var angle = i * Math.PI * 2 / numFs;
 
@@ -99,7 +104,8 @@ var ROLLERCOASTER = (function() {
 
         obj_utils.downloadMeshes(
 	        {
-	            'rollercoaster': 'models/roller.obj'
+	            'rollercoaster': 'models/roller.obj',
+	            'cart' : 'models/cart.obj'
 	        },
 	        function(meshes){ 
 	        	console.log(meshes);
@@ -120,6 +126,26 @@ var ROLLERCOASTER = (function() {
 
 	        	scene.add( roller );
 	        	
+	        	var cart = new ENGINE.BasicMesh({
+	        		name : 'cart',
+	        		pos: {
+	        			x: -8, y: -6, z: 0
+	        		},
+	        		rotation: {
+	        			x: 0, y: 0, z:0
+	        		},
+	        		scale : {
+	        			x: 1, y : 1 , z: 1
+	        		},
+	        		vertexArr : meshes.cart.vertices,
+	        		triangleArr : meshes.cart.indices,
+	        		textureArr : meshes.cart.textures,
+	        		texture : {
+	        			imageSrc : 'textures/ash_uvgrid01.jpg'
+	        		}
+	        	});
+
+	        	scene.add( cart );
 	        }
     	);
         
@@ -127,7 +153,9 @@ var ROLLERCOASTER = (function() {
 	animate = function () {
 		requestAnimationFrame( animate );
 		render();
-		if(_stats) _stats.update();
+		if(_stats) {
+			_stats.update();
+		}
 	},
 	render = function() {
 		renderer.render(scene, camera);
