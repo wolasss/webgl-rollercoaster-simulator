@@ -34,16 +34,14 @@ var ROLLERCOASTER = (function() {
 
         scene = new ENGINE.Scene();
         camera = new ENGINE.PerspectiveCamera(45.0, 0.1, 2000.0);
-        camera.setPosition(0,3,12);
+        camera.setPosition(0,8,0);
 
-        //camera.lookAt(0,0,2);
-        //console.log(camera);
 		var numFs = 8;
   		var radius = 6;
   		var cos,cos1;
   		cos = Math.cos(1 * Math.PI * 2 / numFs) * radius;
   		cos1 = Math.sin(1 * Math.PI * 2 / numFs) * radius;
-  		camera.lookAt(-8,-6,0);
+  		camera.lookAt(8,6,0);
         for(var i=0; i<numFs; i++) {
         	var angle = i * Math.PI * 2 / numFs;
 
@@ -67,13 +65,14 @@ var ROLLERCOASTER = (function() {
 	        	triangleArr: ENGINE.Cube.Triangles,
 	        	textureArr: ENGINE.Cube.Texture,
 				texture: {
-					imageSrc: 'textures/Dirt.jpg'
+					src: ['textures/Dirt.jpg']
 				}
 	        });
 
-	        scene.add( minecraft );
+	        // scene.add( minecraft );
+        }
 
-	        var plane = new ENGINE.BasicMesh({
+        var plane = new ENGINE.BasicMesh({
 	        	pos:{
 	        		x:0,y:0,z:0
 	        	},
@@ -91,24 +90,23 @@ var ROLLERCOASTER = (function() {
 	        	triangleArr: [0, 1, 2,
         						1, 2, 3],
         		textureArr: [256.0, 0.0,  
-         256.0, 256.0,  
-         0.0, 0.0,  
-         0.0, 256.0],
-         	texture : {
-         		imageSrc: 'textures/grasslight-small-dark.jpg'
-         	}
-	        });
+         					256.0, 256.0,  
+         					0.0, 0.0,  
+         					0.0, 256.0],
+         		texture : {
+         			src: ['textures/grasslight-small-dark.jpg']
+         		}
+	    });
 
-	        scene.add( plane );
-        }
+	    scene.add( plane );
 
         obj_utils.downloadMeshes(
 	        {
 	            'rollercoaster': 'models/roller.obj',
-	            'cart' : 'models/cart.obj'
+	            'cart' : 'models/cart.obj',
+	            'skybox' : 'models/skybox.obj'
 	        },
 	        function(meshes){ 
-	        	console.log(meshes);
 	        	var roller = new ENGINE.BasicMesh({
 	        		pos: {
 	        			x: 0, y: 0, z: 0
@@ -120,7 +118,7 @@ var ROLLERCOASTER = (function() {
 	        		triangleArr : meshes.rollercoaster.indices,
 	        		textureArr : meshes.rollercoaster.textures,
 	        		texture : {
-	        			imageSrc : 'textures/ash_uvgrid01.jpg'
+	        			src : ['textures/ash_uvgrid01.jpg']
 	        		}
 	        	});
 
@@ -141,11 +139,33 @@ var ROLLERCOASTER = (function() {
 	        		triangleArr : meshes.cart.indices,
 	        		textureArr : meshes.cart.textures,
 	        		texture : {
-	        			imageSrc : 'textures/ash_uvgrid01.jpg'
+	        			src : ['textures/Blue1.jpg']
 	        		}
 	        	});
 
 	        	scene.add( cart );
+
+	        	var skybox = new ENGINE.BasicMesh({
+	        		name : 'skybox',
+	        		pos: {
+	        			x: 0, y:-100, z: 0
+	        		},
+	        		rotation: {
+	        			x: -3.14, y:0, z:0
+	        		},
+	        		scale : {
+	        			x: 1, y : 1 , z: 1
+	        		},
+	        		vertexArr : meshes.skybox.vertices,
+	        		triangleArr : meshes.skybox.indices,
+	        		textureArr : meshes.skybox.textures,
+	        		texture : {
+	        			src : ['textures/pz.jpg', 'textures/nz.jpg', 'textures/ny.jpg', 'textures/py.jpg','textures/nx.jpg', 'textures/px.jpg'],
+	        			offset : 6
+	        		}
+	        	});
+
+	        	scene.add( skybox );
 	        }
     	);
         

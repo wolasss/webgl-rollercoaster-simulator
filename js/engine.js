@@ -49,13 +49,13 @@ ENGINE.Renderer = function( opts ) {
 
  	var matrix = mat4.create();
  	var pmatrix, tmatrix;
-	this.renderObject = function(Object, Texture, camera) {
+	this.renderObject = function(Object, TexturesArray, camera) {
 		PerspectiveMatrix = camera.projectionMatrix;
 
 		Object.updateMatrix();
 		Object.invertMatrix();
 
-		Object.rotateY(window.y);
+		//Object.rotateY(window.y);
 		camera.rotateY(window.x);
 		if(window.z<1) {
 			window.z=1;
@@ -64,7 +64,6 @@ ENGINE.Renderer = function( opts ) {
 
 		camera.updateMatrix();
 		camera.invertMatrix();
-		//console.log(Object);
 	    //Bind it as The Current Buffer  
 	    _gl.bindBuffer(_gl.ARRAY_BUFFER, Object.VertexBuffer);  
 	  	    
@@ -81,19 +80,23 @@ ENGINE.Renderer = function( opts ) {
         mat4.multiply(matrix, camera.matrixInversed, Object.matrixInversed);   
 
 	    //Set slot 0 as the active Texture  
-	    //_gl.activeTexture(_gl.TEXTURE0);  
-	  
-	    //Load in the Texture To Memory  
-	    _gl.bindTexture(_gl.TEXTURE_2D, Texture);  
+	    _gl.activeTexture(_gl.TEXTURE0);  
+
+	   	_gl.uniformMatrix4fv(pmatrix, false, PerspectiveMatrix);    
+	    _gl.uniformMatrix4fv(tmatrix, false, matrix);  
+	    //Load in the Texture To Memory
+	    for(var i=0, len=TexturesArray.length; i<len; i++) {
+	    	_gl.bindTexture(_gl.TEXTURE_2D, TexturesArray[i].glTex); 
+	    	_gl.drawElements(_gl.TRIANGLES, (Object.offset ? Object.offset : Object.Triangles.length), _gl.UNSIGNED_SHORT, i*6*2);   
+	    }
 	  
 	    //Update The Texture Sampler in the fragment shader to use slot 0  
 	    //_gl.uniform1i(_gl.getUniformLocation(ShaderProgram, "uSampler"), 0);  
 	  
 	    //Set The Perspective and Transformation Matrices  
-	    _gl.uniformMatrix4fv(pmatrix, false, PerspectiveMatrix);    
-	    _gl.uniformMatrix4fv(tmatrix, false, matrix);  
+
 	    //Draw The Triangles  
-	    _gl.drawElements(_gl.TRIANGLES, Object.Triangles.length, _gl.UNSIGNED_SHORT, 0);   
+	    
 	}
 	this.render  = function ( scene, camera) {
 		if ( camera instanceof ENGINE.Camera === false ) {
@@ -115,7 +118,7 @@ ENGINE.Renderer = function( opts ) {
 
 		for(var i=0, len=renderList.length; i<len; i++) {
 			//render objects
-			this.renderObject(renderList[i], renderList[i].activeTexture.glTex, camera);
+			this.renderObject(renderList[i], renderList[i].activeTextures, camera);
 		} 
 		//_gl.viewport(0, 0, _gl.viewportWidth, _gl.viewportHeight);
 
@@ -225,7 +228,6 @@ ENGINE.Object3D.prototype = {
 		mat4.rotateZ(this.matrix, this.matrix, this.rotation[2]);
 		mat4.translate(this.matrix, this.matrix, this.position);
 		if(typeof(this.lookAtMatrix)!=='undefined') {
-			//console.log(this.lookAtMatrix);
 			this.lookAt(this.lookAtCoor[0],this.lookAtCoor[1],this.lookAtCoor[2]);
 			this.matrix=this.lookAtMatrix;
 			//mat4.multiply(this.matrix, this.lookAtMatrix, this.matrix);
@@ -387,10 +389,14 @@ ENGINE.BasicMesh = function(opts) {
 	opts.scale = opts.scale || {};
 	opts.rotation = opts.rotation || {};
 	//todo! mniejsze niz zero odpadaja ten warunke...
-	console.log(this);
 	vec3.set(this.position, (opts.pos.x ? opts.pos.x : 0),(opts.pos.y ? opts.pos.y : 0),(opts.pos.z ? opts.pos.z : 0));
 	vec3.set(this.scale, (opts.scale.x ? opts.scale.x : 1),(opts.scale.y ? opts.scale.y : 1),(opts.scale.z ? opts.scale.z : 1));
-	vec3.set(this.rotation, (opts.rotation.x ? opts.rotation.x : 0), (opts.rotation.y ? opts.rotation.y : 0) ,(opts.rotation.z ? opts.rotation.z : 0));
+	opts.rotation = {
+		x: (typeof opts.rotation.x !== "undefined" ? opts.rotation.x : 0),
+		y: (typeof opts.rotation.y !== "undefined" ? opts.rotation.y : 0),
+		z: (typeof opts.rotation.z !== "undefined" ? opts.rotation.z : 0)
+	}
+	vec3.set(this.rotation, opts.rotation.x, opts.rotation.y,opts.rotation.z);
 	this.Vertices = opts.vertexArr;
 	this.Rotation = 0;
 	opts.triangleArr = opts.triangleArr || [];
@@ -398,9 +404,14 @@ ENGINE.BasicMesh = function(opts) {
     this.triangleCount = opts.triangleArr.length;
     this.Texture = opts.textureArr || [];
     opts.texture = opts.texture || {};
-    this.texUrl = opts.texture.imageSrc;
-    if(this.texUrl) {
-    	this.activeTexture = new ENGINE.Texture(this.texUrl); 
+    this.texturesArray = opts.texture.src;
+    this.offset = opts.texture.offset;
+    this.activeTextures = [];
+
+    if(this.texturesArray && this.texturesArray.length!==0) {
+    	for(var i=0, len=this.texturesArray.length; i<len; i++){
+    		this.activeTextures.push(new ENGINE.Texture(this.texturesArray[i]));
+    	}
     } else {
     	this.noTexture = true;
     }
