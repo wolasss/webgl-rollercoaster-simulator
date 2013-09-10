@@ -1,6 +1,6 @@
 var ROLLERCOASTER = (function() {
 	//private vars
-	var _config, renderer, scene, camera, _gl, _stats = false, _gui = false;
+	var _config, renderer, scene, camera, road, _gl, _stats = false, _gui = false;
 
 	_config = {
 		windowHalfX : window.innerWidth / 2,
@@ -41,6 +41,18 @@ var ROLLERCOASTER = (function() {
         scene = new ENGINE.Scene();
         camera = new ENGINE.PerspectiveCamera(45.0, 0.1, 2000.0);
         camera.setPosition(0,8,0);
+        road = new ENGINE.Road({
+	        		name : 'road',
+	        		pos: {
+	        			x: 0, y: 0, z: 0
+	        		},
+	        		scale : {
+	        			x: 5, y : 5 , z: 5
+	        		},
+	        		pathPoints : ENGINE.path.points,
+	        		pathNormals : ENGINE.path.normals,
+	        		camera: camera
+	    });
 
 		var numFs = 8;
   		var radius = 6;
@@ -109,11 +121,13 @@ var ROLLERCOASTER = (function() {
         obj_utils.downloadMeshes(
 	        {
 	            'rollercoaster': 'models/roller.obj',
+	            'road' : 'models/road.obj',
 	            'cart' : 'models/cart.obj',
 	            'skybox' : 'models/skybox.obj'
 	        },
 	        function(meshes){ 
 	        	var roller = new ENGINE.BasicMesh({
+	        		name: 'rollercoaster',
 	        		pos: {
 	        			x: 0, y: 0, z: 0
 	        		},
@@ -133,7 +147,7 @@ var ROLLERCOASTER = (function() {
 	        	var cart = new ENGINE.BasicMesh({
 	        		name : 'cart',
 	        		pos: {
-	        			x: -8, y: -6, z: 0
+	        			x: 0, y: 0, z: 0
 	        		},
 	        		rotation: {
 	        			x: 0, y: 0, z:0
@@ -148,7 +162,7 @@ var ROLLERCOASTER = (function() {
 	        			src : ['textures/Blue1.jpg']
 	        		}
 	        	});
-
+	        	console.log(meshes);
 	        	scene.add( cart );
 
 	        	var skybox = new ENGINE.BasicMesh({
@@ -184,7 +198,7 @@ var ROLLERCOASTER = (function() {
 		}
 	},
 	render = function() {
-		renderer.render(scene, camera);
+		renderer.render(scene, camera, road);
 	},
 	showStats = function() {
 		_stats = new Stats();

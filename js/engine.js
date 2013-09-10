@@ -47,24 +47,31 @@ ENGINE.Renderer = function( opts ) {
 	window.z = 0;
 	window.calls = 0;
 
- 	var matrix = mat4.create();
- 	var pmatrix, tmatrix;
-	this.renderObject = function(Object, TexturesArray, camera) {
+ 	var matrix = mat4.create(), pooint = vec3.create();
+ 	var pmatrix, tmatrix, k=0;
+	this.renderObject = function(Object, TexturesArray, camera, road) {
 		PerspectiveMatrix = camera.projectionMatrix;
 
 		Object.updateMatrix();
 		Object.invertMatrix();
 
-		//Object.rotateY(window.y);
-		camera.rotateY(window.x);
-		if(window.z<1) {
-			window.z=1;
+		
+		if ( Object.name==='rollercoaster' ) { 
+			//console.log(Object.matrix);
 		}
-		camera.setPosition(( window.y - camera.position[0] ) * .05,(  window.z - camera.position[1] ) * .05,15);
-		//console.log(camera);
-
-		camera.updateMatrix();
-		camera.invertMatrix();
+		if ( Object.name==='cart' ) {
+			if((parseFloat(k,10)-1.0000000)>=0) {
+				k=0;
+			} 
+			//console.log(road);
+			//console.log(k);
+			point = road.catmull.point(k);
+			//console.log(road.catmull.point(0));
+			//console.log(road.catmull.point(1));
+			Object.setPosition(point[0], (-1)*point[1], point[2]);
+			
+			k=k+0.001;
+		}
 	    //Bind it as The Current Buffer  
 	    _gl.bindBuffer(_gl.ARRAY_BUFFER, Object.VertexBuffer);  
 	  	    
@@ -86,20 +93,21 @@ ENGINE.Renderer = function( opts ) {
 	   	_gl.uniformMatrix4fv(pmatrix, false, PerspectiveMatrix);    
 	    _gl.uniformMatrix4fv(tmatrix, false, matrix);  
 	    //Load in the Texture To Memory
-	    for(var i=0, len=TexturesArray.length; i<len; i++) {
-	    	_gl.bindTexture(_gl.TEXTURE_2D, TexturesArray[i].glTex); 
-	    	_gl.drawElements(_gl.TRIANGLES, (Object.offset ? Object.offset : Object.Triangles.length), _gl.UNSIGNED_SHORT, i*6*2);   
-	    }
+	    var offset;
+	    if(this.isRendered!=false) {
+		    for(var i=0, len=TexturesArray.length; i<len; i++) {
+		    	_gl.bindTexture(_gl.TEXTURE_2D, TexturesArray[i].glTex); 
+		    	_gl.drawElements(_gl.TRIANGLES, (Object.offset ? Object.offset : Object.Triangles.length), _gl.UNSIGNED_SHORT, i*6*2);   
+		    }
+		}
 	  
 	    //Update The Texture Sampler in the fragment shader to use slot 0  
 	    _gl.uniform1i(_gl.getUniformLocation(ShaderProgram, "uSampler"), 0);  
 	  
-	    //Set The Perspective and Transformation Matrices  
 
-	    //Draw The Triangles  
 	    
 	}
-	this.render  = function ( scene, camera) {
+	this.render  = function ( scene, camera, road) {
 		if ( camera instanceof ENGINE.Camera === false ) {
 			return;
 		}
@@ -109,19 +117,23 @@ ENGINE.Renderer = function( opts ) {
 
 		_gl.clear(_gl.COLOR_BUFFER_BIT|_gl.DEPTH_BUFFER_BIT); 
 		
-		camera.updateMatrix();
-		camera.invertMatrix();
-
 	    pmatrix = _gl.getUniformLocation(ShaderProgram, "PerspectiveMatrix");  
 	    tmatrix = _gl.getUniformLocation(ShaderProgram, "TransformationMatrix");  
 
+	    camera.rotateY(window.x);
+		if(window.z<1) {
+			window.z=1;
+		}
+		camera.setPosition(( window.y - camera.position[0] ) * .05,(  window.z - camera.position[1] ) * .05,15);
+		//console.log(camera);
 
-
+		camera.updateMatrix();
+		camera.invertMatrix();
+		
 		for(var i=0, len=renderList.length; i<len; i++) {
 			//render objects
-			this.renderObject(renderList[i], renderList[i].activeTextures, camera);
+			this.renderObject(renderList[i], renderList[i].activeTextures, camera, road);
 		} 
-		//_gl.viewport(0, 0, _gl.viewportWidth, _gl.viewportHeight);
 
 	}
 
@@ -399,6 +411,7 @@ ENGINE.BasicMesh = function(opts) {
 	}
 	vec3.set(this.rotation, opts.rotation.x, opts.rotation.y,opts.rotation.z);
 	this.Vertices = opts.vertexArr;
+	this.VertexNormals = opts.vertexNormals;
 	this.Rotation = 0;
 	opts.triangleArr = opts.triangleArr || [];
     this.Triangles = opts.triangleArr;
@@ -417,9 +430,57 @@ ENGINE.BasicMesh = function(opts) {
     	this.noTexture = true;
     }
     this.ready = false;
+
 }
 
 ENGINE.BasicMesh.prototype = Object.create( ENGINE.Object3D.prototype );
+
+
+
+ENGINE.Road = function(opts) {
+	ENGINE.BasicMesh.call(this, opts);
+
+	this.pathPoints = opts.pathPoints || [];
+	this.pathNormals = opts.pathNormals || [];
+	this.catmull = new ENGINE.CatmullRom();
+	this.isRendered = false;
+	this.init(opts.camera);
+}
+
+ENGINE.Road.prototype = Object.create( ENGINE.BasicMesh.prototype );
+
+ENGINE.Road.prototype.updateMatrix = function() {
+	return;
+}
+
+ENGINE.Road.prototype.multiply = function(m, v) {
+	var result = vec4.create();
+
+	result[0] = m[0]*v[0] + m[1]*v[1] + m[2]*v[2] + m[3]*v[3];
+	result[1] = m[4]*v[0] + m[5]*v[1] + m[6]*v[2] + m[7]*v[3];
+	result[2] = m[8]*v[0] + m[9]*v[1] + m[10]*v[2] + m[11]*v[3];
+	result[3] = m[12]*v[0] + m[13]*v[1] + m[14]*v[2] + m[15]*v[3];
+	return result;
+}
+
+ENGINE.Road.prototype.init = function(camera) {
+	var matrix = mat4.create(), temp=vec4.create(), point = vec3.create();
+	this.matrix = mat4.create();
+	mat4.scale(this.matrix, this.matrix, this.scale);
+	mat4.rotateX(this.matrix, this.matrix, this.rotation[0]);
+	mat4.rotateY(this.matrix, this.matrix, this.rotation[1]);
+	mat4.rotateZ(this.matrix, this.matrix, this.rotation[2]);
+	mat4.translate(this.matrix, this.matrix, this.position);
+	this.invertMatrix();
+	for(var i=0, len=ENGINE.path.points.length; i<len; i++) {
+		var a = vec4.create();
+		temp = vec4.fromValues(ENGINE.path.points[i][0], ENGINE.path.points[i][1], ENGINE.path.points[i][2], 1);
+		a = this.multiply(this.matrixInversed, temp);
+		//vec3.set(point, (-1)*a[0], a[1], a[2]);
+		//console.log(point);
+		this.catmull.addPoint(new vec3.fromValues((-1)*a[0], a[1], a[2]), ENGINE.path.normals[i]);
+	}
+}
 
 ENGINE.GUI = function() {
 	this._gui = new dat.GUI();
@@ -463,3 +524,15 @@ ENGINE.Texture = function(url) {
 	}; 
 }
 
+
+ENGINE.path = (function(){
+	var points = [], normals = [];
+	return {
+		points: points,
+		normals: normals,
+		add : function(p, n) {
+			points.push(p);
+			normals.push(n);
+		}
+	}
+})();
