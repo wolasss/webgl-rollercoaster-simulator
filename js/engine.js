@@ -1,5 +1,7 @@
 var ENGINE = ENGINE || {};
 
+
+
 //renderer 
 ENGINE.Renderer = function( opts ) {
 	//params
@@ -47,7 +49,7 @@ ENGINE.Renderer = function( opts ) {
 	window.z = 0;
 	window.calls = 0;
 
- 	var matrix = mat4.create(), pooint = vec3.create();
+ 	var matrix = mat4.create(), point = vec3.create(), lookAtPoint = vec3.create();
  	var pmatrix, tmatrix, k=0;
 	this.renderObject = function(Object, TexturesArray, camera, road) {
 		PerspectiveMatrix = camera.projectionMatrix;
@@ -63,13 +65,18 @@ ENGINE.Renderer = function( opts ) {
 			if((parseFloat(k,10)-1.0000000)>=0) {
 				k=0;
 			} 
-			//console.log(road);
-			//console.log(k);
+
 			point = road.catmull.point(k);
-			//console.log(road.catmull.point(0));
-			//console.log(road.catmull.point(1));
-			Object.setPosition(point[0], (-1)*point[1], point[2]);
-			
+			lookAtPoint = road.catmull.point(k+0.05);
+			Object.forward=vec3.fromValues(0,0,-1);
+			//console.log(k);
+			if(k>0.32) {
+				//console.log('position: ', Object.position);
+				//console.log('rotation: ', Object.rotation); 
+				//debugger; 
+			}
+			Object.setPosition(point[0], point[1], point[2]);
+			Object.pointAt(point[0], point[1], point[2], lookAtPoint[0], lookAtPoint[1], lookAtPoint[2]);
 			k=k+0.001;
 		}
 	    //Bind it as The Current Buffer  
@@ -165,6 +172,10 @@ ENGINE.Renderer = function( opts ) {
 	function initGL() {
 	 	_gl = create3DContext(_canvas);
 	 	ENGINE.__gl = _gl;
+
+	 	//set vars
+	 	ENGINE.RepeatWrapping = ENGINE.__gl.REPEAT;
+		ENGINE.ClampToEdgeWrapping = ENGINE.__gl.CLAMP_TO_EDGE;
 	}
 
 	initGL();
@@ -228,7 +239,7 @@ ENGINE.Object3D.prototype = {
 		this.rotation[0] = rad;
 	},
 	rotateY : function(rad) {
-		this.rotation[1] = rad;
+			this.rotation[1]=rad;
 	},
 	rotateZ : function(rad) {
 		this.rotation[2] = rad;
@@ -240,10 +251,12 @@ ENGINE.Object3D.prototype = {
 		mat4.rotateY(this.matrix, this.matrix, this.rotation[1]);
 		mat4.rotateZ(this.matrix, this.matrix, this.rotation[2]);
 		mat4.translate(this.matrix, this.matrix, this.position);
+		if(typeof(this.pointAtMatrix)!=='undefined') {
+			this.matrix = this.pointAtMatrix;
+		}
 		if(typeof(this.lookAtMatrix)!=='undefined') {
 			this.lookAt(this.lookAtCoor[0],this.lookAtCoor[1],this.lookAtCoor[2]);
 			this.matrix=this.lookAtMatrix;
-			//mat4.multiply(this.matrix, this.lookAtMatrix, this.matrix);
 		}
 		this.matrixWorldNeedsUpdate = true;
 	}
@@ -256,6 +269,44 @@ ENGINE.Object3D.prototype.invertMatrix = function () {
 	mat4.invert(this.matrixInversed, this.matrix);
 }
 
+ENGINE.Object3D.prototype.pointAt = function (a,b,c,x,y,z,up) {
+	var anglex, point = vec3.fromValues(x,y,z);
+	var normalize = function(v) {
+	  var length = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+	  // make sure we don't divide by 0.
+	  if (length > 0.00001) {
+	    return vec3.fromValues(v[0] / length, v[1] / length, v[2] / length);
+	  } else {
+	    return [0, 0, 0];
+	  }
+	}
+	var cross = function(a, b) {
+	  return vec3.fromValues(a[1] * b[2] - a[2] * b[1],
+	          a[2] * b[0] - a[0] * b[2],
+	          a[0] * b[1] - a[1] * b[0]);
+	}
+	var sub = function(a,b) {
+		return vec3.fromValues(b[0]-a[0], b[1]-a[1], b[2]-a[2]);
+	}
+	var length = function(v) {
+		return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+	}
+	var dotProduct = function(a,b) {
+		return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+	}
+	var forwardv = this.forward;
+	var pointv = normalize(sub(this.position, point));
+	var forwardvl = length(forwardv);
+	var pointvl = length(pointv);
+	//console.log(forwardv, forwardvl, pointv, pointvl);
+	anglex=Math.acos( (dotProduct(forwardv,pointv)) / (forwardvl*pointvl) );
+	var angley=Math.asin( length(cross(forwardv,pointv)) / (forwardvl*pointvl) );
+	var alfa = Math.atan(angley/anglex);
+	//if(anglex>2.0) this.forward = vec3.fromValues(1,0,0);
+	//this.rotateY(anglex);
+	//console.log('angle:', alfa);
+
+};
 
 ENGINE.Scene = function() {
 	ENGINE.Object3D.call(this);
@@ -318,6 +369,7 @@ ENGINE.PerspectiveCamera.prototype = Object.create( ENGINE.Camera.prototype );
 
 
 ENGINE.PerspectiveCamera.prototype.lookAt = function ( x,y,z ) {
+	this.camera=true;
 	this.lookAtMatrix = mat4.create();
 	this.lookAtCoor = vec3.create();
 	vec3.set(this.lookAtCoor,x,y,z);
@@ -424,7 +476,7 @@ ENGINE.BasicMesh = function(opts) {
 
     if(this.texturesArray && this.texturesArray.length!==0) {
     	for(var i=0, len=this.texturesArray.length; i<len; i++){
-    		this.activeTextures.push(new ENGINE.Texture(this.texturesArray[i]));
+    		this.activeTextures.push(new ENGINE.Texture(this.texturesArray[i], opts.texture.settings));
     	}
     } else {
     	this.noTexture = true;
@@ -476,9 +528,7 @@ ENGINE.Road.prototype.init = function(camera) {
 		var a = vec4.create();
 		temp = vec4.fromValues(ENGINE.path.points[i][0], ENGINE.path.points[i][1], ENGINE.path.points[i][2], 1);
 		a = this.multiply(this.matrixInversed, temp);
-		//vec3.set(point, (-1)*a[0], a[1], a[2]);
-		//console.log(point);
-		this.catmull.addPoint(new vec3.fromValues((-1)*a[0], a[1], a[2]), ENGINE.path.normals[i]);
+		this.catmull.addPoint(new vec3.fromValues((-1)*a[0], (-1)*a[1], a[2]), ENGINE.path.normals[i]);
 	}
 }
 
@@ -493,8 +543,11 @@ ENGINE.GUI.prototype.add = function(obj, val, slider) {
 	return this._gui.add(obj, val);
 }
 
-ENGINE.Texture = function(url) {
+ENGINE.Texture = function(url, opt) {
 	var _self = this, _gl = ENGINE.__gl;
+
+	opt = opt || {};
+
 	this.image = new Image();
     this.ready = false;
     this.image.onload = function () {
@@ -507,8 +560,8 @@ ENGINE.Texture = function(url) {
 	    var TempTex = _gl.createTexture();  
 	    _gl.bindTexture(_gl.TEXTURE_2D, TempTex);    
 	      
-	    //Flip Positive Y (Optional)  
-	    //_gl.pixelStorei(_gl.UNPACK_FLIP_Y_WEBGL, true);  
+	    var wrapS = opt.wrapS !== undefined ? opt.wrapS : ENGINE.RepeatWrapping,
+	    wrapT = opt.wrapT !== undefined ? opt.wrapT : ENGINE.RepeatWrapping;
 	      
 	    //Load in The Image  
 	    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, Img);    
@@ -516,6 +569,9 @@ ENGINE.Texture = function(url) {
 	    //Setup Scaling properties  
 	    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
   		_gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR_MIPMAP_NEAREST);
+
+  		_gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_WRAP_S, wrapS);
+		_gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_WRAP_T, wrapT);
 	    _gl.generateMipmap(_gl.TEXTURE_2D);   
 	      
 	    //Unbind the texture and return it.  

@@ -153,7 +153,7 @@ var ROLLERCOASTER = (function() {
 	        			x: 0, y: 0, z:0
 	        		},
 	        		scale : {
-	        			x: 1, y : 1 , z: 1
+	        			x: 0.5, y : 0.5 , z: 0.5
 	        		},
 	        		vertexArr : meshes.cart.vertices,
 	        		triangleArr : meshes.cart.indices,
@@ -162,7 +162,7 @@ var ROLLERCOASTER = (function() {
 	        			src : ['textures/Blue1.jpg']
 	        		}
 	        	});
-	        	console.log(meshes);
+	        	
 	        	scene.add( cart );
 
 	        	var skybox = new ENGINE.BasicMesh({
@@ -181,7 +181,11 @@ var ROLLERCOASTER = (function() {
 	        		textureArr : meshes.skybox.textures,
 	        		texture : {
 	        			src : ['textures/pz.jpg', 'textures/nz.jpg', 'textures/ny.jpg', 'textures/py.jpg','textures/nx.jpg', 'textures/px.jpg'],
-	        			offset : 6
+	        			offset : 6,
+	        			settings : {
+	        				wrapS: ENGINE.ClampToEdgeWrapping,
+	        				wrapT: ENGINE.ClampToEdgeWrapping
+	        			}
 	        		}
 	        	});
 
