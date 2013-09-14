@@ -129,12 +129,7 @@ ENGINE.Renderer = function( opts ) {
 	    pmatrix = _gl.getUniformLocation(ShaderProgram, "PerspectiveMatrix");  
 	    tmatrix = _gl.getUniformLocation(ShaderProgram, "TransformationMatrix");  
 
-	    camera.rotateY(window.x);
-		if(window.z<1) {
-			window.z=1;
-		}
-		camera.setPosition(( window.y - camera.position[0] ) * .05,(  window.z - camera.position[1] ) * .05,15);
-		camera.updatePosition();
+		camera.updateView();
 
 		camera.updateMatrix();
 		camera.invertMatrix();
@@ -383,7 +378,12 @@ ENGINE.PerspectiveCamera.prototype.updateProjectionMatrix = function () {
 	mat4.invert(this.projectionMatrixInverse, this.projectionMatrix);
 }
 
-ENGINE.PerspectiveCamera.prototype.updatePosition = function () { 
+ENGINE.PerspectiveCamera.prototype.updateView = function () {
+	this.rotateY(window.x);
+	if(window.z<1) {
+		window.z=1;
+	}
+	this.setPosition(( window.y - this.position[0] ) * .05,(  window.z - this.position[1] ) * .05,15);
 }
 
 ENGINE.RelativeCamera = function( fov, near, far, parent) {
@@ -404,7 +404,7 @@ ENGINE.RelativeCamera.prototype.lookAt = function ( x,y,z ) {
 	mat4.invert(this.lookAtMatrix,this.lookAtMatrix);
 };
 
-ENGINE.RelativeCamera.prototype.updatePosition = function () { 
+ENGINE.RelativeCamera.prototype.updateView = function () { 
 	var parent  = this.parent, nextPoint = this.parent.nextPoint !== "undefined" ? this.parent.nextPoint : false;
 	this.position[0] = (-1)*this.parent.position[0];
 	this.position[1] = (-1)*this.parent.position[1]+2;
@@ -413,6 +413,25 @@ ENGINE.RelativeCamera.prototype.updatePosition = function () {
 	if(nextPoint) {
 		this.lookAt(nextPoint[0], nextPoint[1], nextPoint[2]);
 	}
+}
+
+ENGINE.LookAtCamera = function( fov, near, far, parent) {
+	ENGINE.RelativeCamera.call( this, fov, near, far, parent );
+
+	this.updateProjectionMatrix();
+}
+
+ENGINE.LookAtCamera.prototype = Object.create( ENGINE.PerspectiveCamera.prototype );
+
+ENGINE.LookAtCamera.prototype.updateView = function () { 
+	var parent  = this.parent;
+	
+	if(window.z<2) {
+		window.z=2;
+	}
+	this.setPosition(( window.y - this.position[0] ) * .05,(  window.z - this.position[1] ) * .05,15);
+	this.lookAt((-1)*this.parent.position[0], (-1)*this.parent.position[1], (-1)*this.parent.position[2]);
+
 }
 
 ENGINE.Shaders = function() {
