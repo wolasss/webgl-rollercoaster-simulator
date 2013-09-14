@@ -1,6 +1,6 @@
 var ROLLERCOASTER = (function() {
 	//private vars
-	var _config, renderer, scene, camera, road, _gl, _stats = false, _gui = false;
+	var _config, _currentCamera, renderer, scene, camera, cameraCart, road, _gl, _stats = false, _gui = false;
 
 	_config = {
 		windowHalfX : window.innerWidth / 2,
@@ -40,6 +40,7 @@ var ROLLERCOASTER = (function() {
 
         scene = new ENGINE.Scene();
         camera = new ENGINE.PerspectiveCamera(45.0, 0.1, 2000.0);
+        _currentCamera = camera;
         camera.setPosition(0,8,0);
         road = new ENGINE.Road({
 	        		name : 'road',
@@ -165,6 +166,9 @@ var ROLLERCOASTER = (function() {
 	        	
 	        	scene.add( cart );
 
+	        	cameraCart = new ENGINE.RelativeCamera(45.0, 0.1, 2000.0, cart);
+	        	_currentCamera = cameraCart;
+
 	        	var skybox = new ENGINE.BasicMesh({
 	        		name : 'skybox',
 	        		pos: {
@@ -202,7 +206,7 @@ var ROLLERCOASTER = (function() {
 		}
 	},
 	render = function() {
-		renderer.render(scene, camera, road);
+		renderer.render(scene, _currentCamera, road);
 	},
 	showStats = function() {
 		_stats = new Stats();
@@ -217,6 +221,7 @@ var ROLLERCOASTER = (function() {
 	
 	return {
 		start : init,
+		currentCamera : function() { return _currentCamera; },
 		gl: function() {return renderer}
 	}
 })();

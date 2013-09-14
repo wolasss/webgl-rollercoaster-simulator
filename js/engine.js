@@ -70,13 +70,15 @@ ENGINE.Renderer = function( opts ) {
 			lookAtPoint = road.catmull.point(k+0.05);
 			Object.forward=vec3.fromValues(0,0,-1);
 			//console.log(k);
-			if(k>0.32) {
+			if(k>0.9) {
 				//console.log('position: ', Object.position);
 				//console.log('rotation: ', Object.rotation); 
 				//debugger; 
+				lookAtPoint = road.catmull.point(0.05); //don't look under cart!
 			}
 			Object.setPosition(point[0], point[1], point[2]);
 			Object.pointAt(point[0], point[1], point[2], lookAtPoint[0], lookAtPoint[1], lookAtPoint[2]);
+
 			k=k+0.001;
 		}
 	    //Bind it as The Current Buffer  
@@ -132,7 +134,7 @@ ENGINE.Renderer = function( opts ) {
 			window.z=1;
 		}
 		camera.setPosition(( window.y - camera.position[0] ) * .05,(  window.z - camera.position[1] ) * .05,15);
-		//console.log(camera);
+		camera.updatePosition();
 
 		camera.updateMatrix();
 		camera.invertMatrix();
@@ -295,6 +297,7 @@ ENGINE.Object3D.prototype.pointAt = function (a,b,c,x,y,z,up) {
 		return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 	}
 	var forwardv = this.forward;
+	this.nextPoint = vec3.fromValues(x,y,z);
 	var pointv = normalize(sub(this.position, point));
 	var forwardvl = length(forwardv);
 	var pointvl = length(pointv);
@@ -367,22 +370,49 @@ ENGINE.PerspectiveCamera = function( fov, near, far) {
 
 ENGINE.PerspectiveCamera.prototype = Object.create( ENGINE.Camera.prototype );
 
-
 ENGINE.PerspectiveCamera.prototype.lookAt = function ( x,y,z ) {
 	this.camera=true;
 	this.lookAtMatrix = mat4.create();
-	this.lookAtCoor = vec3.create();
-	vec3.set(this.lookAtCoor,x,y,z);
-	var vector = vec3.create(), position = vec3.create();
-	vec3.set(vector,x,y,z);
-	vec3.set(position,this.matrix[12],this.matrix[13],this.matrix[14]);
-	mat4.lookAt(this.lookAtMatrix, position, vector, this.up);
+	this.lookAtCoor = vec3.fromValues(x,y,z);
+	mat4.lookAt(this.lookAtMatrix, this.position, this.lookAtCoor, this.up);
 	mat4.invert(this.lookAtMatrix,this.lookAtMatrix);
 };
 
 ENGINE.PerspectiveCamera.prototype.updateProjectionMatrix = function () { 
 	mat4.perspective(this.projectionMatrix, this.fov, this.aspect, this.near, this.far );
 	mat4.invert(this.projectionMatrixInverse, this.projectionMatrix);
+}
+
+ENGINE.PerspectiveCamera.prototype.updatePosition = function () { 
+}
+
+ENGINE.RelativeCamera = function( fov, near, far, parent) {
+	ENGINE.PerspectiveCamera.call( this, fov, near, far );
+
+	this.parent = parent;
+	this.updateProjectionMatrix();
+}
+
+ENGINE.RelativeCamera.prototype = Object.create( ENGINE.PerspectiveCamera.prototype );
+
+ENGINE.RelativeCamera.prototype.lookAt = function ( x,y,z ) {
+	var vector = vec3.fromValues((-1)*x, (-1)*y, (-1)*z);
+	this.camera=true;
+	this.lookAtMatrix = mat4.create();
+	this.lookAtCoor = vec3.fromValues(x,y,z);
+	mat4.lookAt(this.lookAtMatrix, this.position, vector, this.up);
+	mat4.invert(this.lookAtMatrix,this.lookAtMatrix);
+};
+
+ENGINE.RelativeCamera.prototype.updatePosition = function () { 
+	var parent  = this.parent, nextPoint = this.parent.nextPoint !== "undefined" ? this.parent.nextPoint : false;
+	this.position[0] = (-1)*this.parent.position[0];
+	this.position[1] = (-1)*this.parent.position[1]+2;
+	this.position[2] = (-1)*this.parent.position[2];
+
+	if(nextPoint) {
+		this.lookAt(nextPoint[0], nextPoint[1], nextPoint[2]);
+	}
 }
 
 ENGINE.Shaders = function() {

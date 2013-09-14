@@ -270,5 +270,3 @@ ENGINE.path.add(vec3.fromValues(39.8160, 28.6805, 21.8484),vec3.fromValues(0.031
 ENGINE.path.add(vec3.fromValues(39.7844, 29.3441, 16.7868),vec3.fromValues(0.0331, -0.9944, -0.0999));
 ENGINE.path.add(vec3.fromValues(39.7448, 29.7880, 10.4240),vec3.fromValues(0.0355, -0.9984, -0.0440));
 ENGINE.path.add(vec3.fromValues(39.7253, 29.9317, 5.3275),vec3.fromValues(0.0367, -0.9992, -0.0148));
-ENGINE.path.add(vec3.fromValues(39.7223, 29.9548, 0.2328),vec3.fromValues(0.0374, -0.9993, 0.0041));
-ENGINE.path.add(vec3.fromValues(39.7451, 29.8801, -6.1291),vec3.fromValues(0.0377, -0.9991, 0.0179));

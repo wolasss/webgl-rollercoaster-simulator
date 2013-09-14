@@ -51,7 +51,7 @@ ENGINE.CatmullRom.prototype.point = function (t) {
         return this.points[0];
     } else if (t == 1.0) {
         return this.points[this.points.length - 1];
-    } else {
+    } else if (t>1) { return this.points[0]; } else if (t<0) { return this.points[0]; } else {
         var idx = this.getSegmentForTime(t);
         var startSegment = this.segmentRatios[idx];
         if (idx == this.segmentRatios.length-1) {
@@ -61,7 +61,7 @@ ENGINE.CatmullRom.prototype.point = function (t) {
         }        
         var segmentTime = (t - startSegment) / (endSegment - startSegment);
         return this.hermiteInterpolation(idx, segmentTime);   
-    }    
+    } 
 };
 
 ENGINE.CatmullRom.prototype.normal = function (t) {
