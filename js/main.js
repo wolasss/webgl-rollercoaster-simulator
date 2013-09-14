@@ -164,7 +164,7 @@ var ROLLERCOASTER = (function() {
 	        			x: 0, y: 0, z:0
 	        		},
 	        		scale : {
-	        			x: 0.5, y : 0.5 , z: 0.5
+	        			x: 0, y : 0 , z: 0
 	        		},
 	        		vertexArr : meshes.cart.vertices,
 	        		triangleArr : meshes.cart.indices,

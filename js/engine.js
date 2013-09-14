@@ -77,7 +77,7 @@ ENGINE.Renderer = function( opts ) {
 				lookAtPoint = road.catmull.point(0.05); //don't look under cart!
 			}
 			Object.setPosition(point[0], point[1], point[2]);
-			Object.pointAt(point[0], point[1], point[2], lookAtPoint[0], lookAtPoint[1], lookAtPoint[2]);
+			Object.pointAt(lookAtPoint[0], lookAtPoint[1], lookAtPoint[2]);
 
 			k=k+0.001;
 		}
@@ -266,44 +266,13 @@ ENGINE.Object3D.prototype.invertMatrix = function () {
 	mat4.invert(this.matrixInversed, this.matrix);
 }
 
-ENGINE.Object3D.prototype.pointAt = function (a,b,c,x,y,z,up) {
-	var anglex, point = vec3.fromValues(x,y,z);
-	var normalize = function(v) {
-	  var length = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-	  // make sure we don't divide by 0.
-	  if (length > 0.00001) {
-	    return vec3.fromValues(v[0] / length, v[1] / length, v[2] / length);
-	  } else {
-	    return [0, 0, 0];
-	  }
-	}
-	var cross = function(a, b) {
-	  return vec3.fromValues(a[1] * b[2] - a[2] * b[1],
-	          a[2] * b[0] - a[0] * b[2],
-	          a[0] * b[1] - a[1] * b[0]);
-	}
-	var sub = function(a,b) {
-		return vec3.fromValues(b[0]-a[0], b[1]-a[1], b[2]-a[2]);
-	}
-	var length = function(v) {
-		return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-	}
-	var dotProduct = function(a,b) {
-		return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
-	}
-	var forwardv = this.forward;
+ENGINE.Object3D.prototype.pointAt = function (x,y,z,up) {
+	var position = vec3.fromValues((-1)*this.position[0], (-1)*this.position[1], (-1)*this.position[2]), vector = vec3.fromValues((-1)*x, (-1)*y, (-1)*z);
 	this.nextPoint = vec3.fromValues(x,y,z);
-	var pointv = normalize(sub(this.position, point));
-	var forwardvl = length(forwardv);
-	var pointvl = length(pointv);
-	//console.log(forwardv, forwardvl, pointv, pointvl);
-	anglex=Math.acos( (dotProduct(forwardv,pointv)) / (forwardvl*pointvl) );
-	var angley=Math.asin( length(cross(forwardv,pointv)) / (forwardvl*pointvl) );
-	var alfa = Math.atan(angley/anglex);
-	//if(anglex>2.0) this.forward = vec3.fromValues(1,0,0);
-	//this.rotateY(anglex);
-	//console.log('angle:', alfa);
-
+	this.pointAtMatrix = mat4.create();
+	this.lookAtCoor = vec3.fromValues(x,y,z);
+	mat4.lookAt(this.pointAtMatrix, position, vector, this.up);
+	//mat4.invert(this.pointAtMatrix,this.pointAtMatrix);
 };
 
 ENGINE.Scene = function() {
@@ -421,7 +390,7 @@ ENGINE.LookAtCamera = function( fov, near, far, parent) {
 	this.updateProjectionMatrix();
 }
 
-ENGINE.LookAtCamera.prototype = Object.create( ENGINE.PerspectiveCamera.prototype );
+ENGINE.LookAtCamera.prototype = Object.create( ENGINE.RelativeCamera.prototype );
 
 ENGINE.LookAtCamera.prototype.updateView = function () { 
 	var parent  = this.parent;
