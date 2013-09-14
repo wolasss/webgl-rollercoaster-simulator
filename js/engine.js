@@ -348,7 +348,7 @@ ENGINE.PerspectiveCamera.prototype.updateProjectionMatrix = function () {
 }
 
 ENGINE.PerspectiveCamera.prototype.updateView = function () {
-	//this.rotateY(window.x);
+	this.rotateY(window.x);
 	if(window.z<1) {
 		window.z=1;
 	}
@@ -364,8 +364,9 @@ ENGINE.RelativeCamera = function( fov, near, far, parent) {
 
 ENGINE.RelativeCamera.prototype = Object.create( ENGINE.PerspectiveCamera.prototype );
 
-ENGINE.RelativeCamera.prototype.lookAt = function ( x,y,z ) {
-	var vector = vec3.fromValues((-1)*x, (-1)*y, (-1)*z);
+ENGINE.RelativeCamera.prototype.lookAt = function ( x,y,z, up ) {
+	var vector = vec3.fromValues((-1)*x, (-1)*y, (-1)*z),
+	up = up || this.parent.up;
 	this.camera=true;
 	this.lookAtMatrix = mat4.create();
 	this.lookAtCoor = vec3.fromValues(x,y,z);
@@ -392,14 +393,24 @@ ENGINE.LookAtCamera = function( fov, near, far, parent) {
 
 ENGINE.LookAtCamera.prototype = Object.create( ENGINE.RelativeCamera.prototype );
 
+ENGINE.LookAtCamera.prototype.lookAt = function ( x,y,z ) {
+	var vector = vec3.fromValues((-1)*x, (-1)*y, (-1)*z);
+	this.camera=true;
+	this.lookAtMatrix = mat4.create();
+	this.lookAtCoor = vec3.fromValues(x,y,z);
+	mat4.lookAt(this.lookAtMatrix, this.position, vector, this.up);
+	mat4.invert(this.lookAtMatrix,this.lookAtMatrix);
+};
+
 ENGINE.LookAtCamera.prototype.updateView = function () { 
 	var parent  = this.parent;
-	
+
+	this.rotateY(window.x);
 	if(window.z<2) {
 		window.z=2;
 	}
 	this.setPosition(( window.y - this.position[0] ) * .05,(  window.z - this.position[1] ) * .05,15);
-	this.lookAt((-1)*this.parent.position[0], (-1)*this.parent.position[1], (-1)*this.parent.position[2]);
+	this.lookAt(this.parent.position[0], (-1)*this.parent.position[1], this.parent.position[2]);
 
 }
 
