@@ -47,9 +47,10 @@ ENGINE.Renderer = function( opts ) {
 	window.x = 0;
 	window.y = 0;
 	window.z = 0;
+	window.speed = 0.001;
 	window.calls = 0;
 
- 	var matrix = mat4.create(), point = vec3.create(), lookAtPoint = vec3.create();
+ 	var matrix = mat4.create(), point = vec3.create(), lookAtPoint = vec3.create(), normal = vec3.create();
  	var pmatrix, tmatrix, k=0;
 	this.renderObject = function(Object, TexturesArray, camera, road) {
 		PerspectiveMatrix = camera.projectionMatrix;
@@ -67,8 +68,10 @@ ENGINE.Renderer = function( opts ) {
 			} 
 
 			point = road.catmull.point(k);
+			normal = road.catmull.normal(k);
 			lookAtPoint = road.catmull.point(k+0.05);
 			Object.forward=vec3.fromValues(0,0,-1);
+			Object.up = normal;
 			//console.log(k);
 			if(k>0.9) {
 				//console.log('position: ', Object.position);
@@ -79,7 +82,7 @@ ENGINE.Renderer = function( opts ) {
 			Object.setPosition(point[0], point[1], point[2]);
 			Object.pointAt(lookAtPoint[0], lookAtPoint[1], lookAtPoint[2]);
 
-			k=k+0.001;
+			k=k+window.speed;
 		}
 	    //Bind it as The Current Buffer  
 	    _gl.bindBuffer(_gl.ARRAY_BUFFER, Object.VertexBuffer);  
@@ -180,9 +183,7 @@ ENGINE.Renderer = function( opts ) {
 	_shaders.init();
 	_gui = new ENGINE.GUI();
 	ENGINE._gui = _gui;
-	ENGINE._gui.add(window, 'x',true);
-	ENGINE._gui.add(window, 'y',true);
-	ENGINE._gui.add(window, 'z',true);
+	//ENGINE._gui.add(window, 'speed');
 
 	var shaders_obj = _shaders.create();
 	ShaderProgram = shaders_obj.ShaderProgram;
@@ -310,7 +311,6 @@ ENGINE.Camera = function () {
 	ENGINE.Object3D.call( this );
 
 	this.matrixWorldInverse = mat4.create();
-	//this.matrixInversed = mat4.create();
 	
 	this.projectionMatrix = mat4.create();
 	this.projectionMatrixInverse = mat4.create();
@@ -348,7 +348,7 @@ ENGINE.PerspectiveCamera.prototype.updateProjectionMatrix = function () {
 }
 
 ENGINE.PerspectiveCamera.prototype.updateView = function () {
-	this.rotateY(window.x);
+	//this.rotateY(window.x);
 	if(window.z<1) {
 		window.z=1;
 	}
@@ -369,7 +369,7 @@ ENGINE.RelativeCamera.prototype.lookAt = function ( x,y,z ) {
 	this.camera=true;
 	this.lookAtMatrix = mat4.create();
 	this.lookAtCoor = vec3.fromValues(x,y,z);
-	mat4.lookAt(this.lookAtMatrix, this.position, vector, this.up);
+	mat4.lookAt(this.lookAtMatrix, this.position, vector, this.parent.up);
 	mat4.invert(this.lookAtMatrix,this.lookAtMatrix);
 };
 
@@ -505,8 +505,6 @@ ENGINE.BasicMesh = function(opts) {
 
 ENGINE.BasicMesh.prototype = Object.create( ENGINE.Object3D.prototype );
 
-
-
 ENGINE.Road = function(opts) {
 	ENGINE.BasicMesh.call(this, opts);
 
@@ -546,7 +544,7 @@ ENGINE.Road.prototype.init = function(camera) {
 		var a = vec4.create();
 		temp = vec4.fromValues(ENGINE.path.points[i][0], ENGINE.path.points[i][1], ENGINE.path.points[i][2], 1);
 		a = this.multiply(this.matrixInversed, temp);
-		this.catmull.addPoint(new vec3.fromValues((-1)*a[0], (-1)*a[1], a[2]), ENGINE.path.normals[i]);
+		this.catmull.addPoint(new vec3.fromValues((-1)*a[0], (-1)*a[1], a[2]), vec3.fromValues((-1)*ENGINE.path.normals[i][0],(-1)*ENGINE.path.normals[i][1],ENGINE.path.normals[i][2]));
 	}
 }
 
@@ -556,7 +554,7 @@ ENGINE.GUI = function() {
 
 ENGINE.GUI.prototype.add = function(obj, val, slider) {
 	if(slider) {
-		return this._gui.add(obj, val, -10, 10).step(.1);
+		return this._gui.add(obj, val, 0.00001, 0.01).step(0.01);
 	}
 	return this._gui.add(obj, val);
 }

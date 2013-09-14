@@ -71,7 +71,8 @@ ENGINE.CatmullRom.prototype.normal = function (t) {
     } else if (t == 1.0) {
         return this.normals[this.normals.length - 1];
     } else {
-        //return last normal...
+         var idx = this.getSegmentForTime(t);
+         return this.normals[idx];
     }    
 };
 
