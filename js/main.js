@@ -1,6 +1,6 @@
 var ROLLERCOASTER = (function() {
 	//private vars
-	var _config, _currentCamera, renderer, scene, camera, cameraCart, road, _gl, _stats = false, _gui = false;
+	var _config, _currentCamera, _cameras = [], renderer, scene, camera, cameraCart, road, _gl, _stats = false, _gui = false;
 
 	_config = {
 		windowHalfX : window.innerWidth / 2,
@@ -14,9 +14,19 @@ var ROLLERCOASTER = (function() {
         window.y = ( event.clientX - _config.windowHalfX ) ;
         window.z = ( event.clientY - _config.windowHalfY ) ;
     },
+    switchCameras = function() {
+    	var key = _cameras.indexOf(_currentCamera);
+    	if(++key>=_cameras.length) key=0;
+    	_currentCamera = _cameras[key];
+    }
 	prepareEvents = function() {
 		$(window).resize(onWindowResize);
 		$(document).on('mousemove', onDocumentMouseMove);
+		$(window).keypress(function(e){
+			if(e.which===99) {
+				switchCameras();
+			}
+		});
 	},
 	init = function(opts) {
 		opts = opts || {};
@@ -40,8 +50,8 @@ var ROLLERCOASTER = (function() {
 
         scene = new ENGINE.Scene();
         camera = new ENGINE.PerspectiveCamera(45.0, 0.1, 2000.0);
-        _currentCamera = camera;
         camera.setPosition(0,8,0);
+        _cameras.push(camera);
         road = new ENGINE.Road({
 	        		name : 'road',
 	        		pos: {
@@ -167,7 +177,7 @@ var ROLLERCOASTER = (function() {
 	        	scene.add( cart );
 
 	        	cameraCart = new ENGINE.RelativeCamera(45.0, 0.1, 2000.0, cart);
-	        	_currentCamera = cameraCart;
+	        	_cameras.push(cameraCart);
 
 	        	var skybox = new ENGINE.BasicMesh({
 	        		name : 'skybox',
@@ -196,7 +206,7 @@ var ROLLERCOASTER = (function() {
 	        	scene.add( skybox );
 	        }
     	);
-        
+    _currentCamera = _cameras[0];
 	},
 	animate = function () {
 		requestAnimationFrame( animate );
