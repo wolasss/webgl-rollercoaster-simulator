@@ -78,10 +78,9 @@ ENGINE.Renderer = function( opts ) {
 			if((parseFloat(k,10)-1.0000000)>=0) {
 				k=0;
 			} 
-
-			point = road.catmull.point(k);
-			normal = road.catmull.normal(k);
-			lookAtPoint = road.catmull.point(k+0.05);
+			point = road.catmullPoints.point(k);
+			normal = road.catmullNormals.point(k);
+			lookAtPoint = road.catmullPoints.point(k+0.05);
 			Object.forward=vec3.fromValues(0,0,-1);
 			Object.up = normal;
 			//console.log(k);
@@ -89,13 +88,13 @@ ENGINE.Renderer = function( opts ) {
 				//console.log('position: ', Object.position);
 				//console.log('rotation: ', Object.rotation); 
 				//debugger; 
-				lookAtPoint = road.catmull.point(0.05); //don't look under cart!
+				lookAtPoint = road.catmullPoints.point(0.05); //don't look under cart!
 			}
 			Object.setPosition(point[0], point[1], point[2]);
 			Object.pointAt(lookAtPoint[0], lookAtPoint[1], lookAtPoint[2]);
 
 			ENGINE.CalculateSpeed((-1)*10*Object.position[1]);
-			console.log(ENGINE.speed);
+			//console.log(ENGINE.speed);
 			k=k+ENGINE.speed;
 		}
 	    //Bind it as The Current Buffer  
@@ -535,7 +534,8 @@ ENGINE.Road = function(opts) {
 
 	this.pathPoints = opts.pathPoints || [];
 	this.pathNormals = opts.pathNormals || [];
-	this.catmull = new ENGINE.CatmullRom();
+	this.catmullPoints = new ENGINE.CatmullRom();
+	this.catmullNormals = new ENGINE.CatmullRom();
 	this.isRendered = false;
 	this.init(opts.camera);
 }
@@ -569,9 +569,10 @@ ENGINE.Road.prototype.init = function(camera) {
 		var a = vec4.create();
 		temp = vec4.fromValues(ENGINE.path.points[i][0], ENGINE.path.points[i][1], ENGINE.path.points[i][2], 1);
 		a = this.multiply(this.matrixInversed, temp);
-		this.catmull.addPoint(new vec3.fromValues((-1)*a[0], (-1)*a[1], a[2]), vec3.fromValues((-1)*ENGINE.path.normals[i][0],(-1)*ENGINE.path.normals[i][1],ENGINE.path.normals[i][2]));
+		this.catmullPoints.addPoint(new vec3.fromValues((-1)*a[0], (-1)*a[1], a[2]));
+		this.catmullNormals.addPoint(vec3.fromValues((-1)*ENGINE.path.normals[i][0],(-1)*ENGINE.path.normals[i][1],ENGINE.path.normals[i][2]));
 	}
-	var start =  this.catmull.point(0);
+	var start =  this.catmullPoints.point(0);
 	ENGINE.CalculateSpeed = ENGINE.CalculateSpeed((-1)*10*start[1]);
 }
 

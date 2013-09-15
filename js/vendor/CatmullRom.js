@@ -24,19 +24,17 @@
 ENGINE.CatmullRom = function (spec) {
     spec = spec || {};
     this.points = spec.points != null ? spec.points : [];
-    this.normals = spec.normals != null ? spec.normals : [];
     this.tangents = [];
 
     // contains the running sum of the segment ratios
     this.segmentRatios = [];
-    this.sharpness = spec.sharpness != null ? spec.sharpness : 0.5;
+    this.sharpness = spec.sharpness != null ? spec.sharpness : 0.1;
 };
 
 ENGINE.CatmullRom.prototype.constructor = ENGINE.CatmullRom;
 
-ENGINE.CatmullRom.prototype.addPoint = function (p, n) {
+ENGINE.CatmullRom.prototype.addPoint = function (p) {
     this.points.push(p);
-    this.normals.push(n);
     this.calculateSegmentsRatios();
     this.calculateTangents();
 };
@@ -62,18 +60,6 @@ ENGINE.CatmullRom.prototype.point = function (t) {
         var segmentTime = (t - startSegment) / (endSegment - startSegment);
         return this.hermiteInterpolation(idx, segmentTime);   
     } 
-};
-
-ENGINE.CatmullRom.prototype.normal = function (t) {
-    // check corner cases, t == 0, t == 1
-    if (t == 0) {
-        return this.normals[0];
-    } else if (t == 1.0) {
-        return this.normals[this.normals.length - 1];
-    } else {
-         var idx = this.getSegmentForTime(t);
-         return this.normals[idx];
-    }    
 };
 
 /**
