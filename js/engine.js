@@ -1,6 +1,17 @@
 var ENGINE = ENGINE || {};
 
+//physics 
+ENGINE.gravityACC = 9.80665;
+ENGINE.cartMass = 500;
+ENGINE.speed=0;
 
+ENGINE.CalculateSpeed = function(height) {
+	var startEnergy =  (ENGINE.cartMass*4/2) + ENGINE.cartMass*height*ENGINE.gravityACC; 
+	return function(h) {
+		ENGINE.speed = Math.sqrt(  (2*startEnergy-2*ENGINE.cartMass*ENGINE.gravityACC*h)/ENGINE.cartMass  );
+		ENGINE.speed = (7.2*ENGINE.speed)/100000;
+	}
+}
 
 //renderer 
 ENGINE.Renderer = function( opts ) {
@@ -63,6 +74,7 @@ ENGINE.Renderer = function( opts ) {
 			//console.log(Object.matrix);
 		}
 		if ( Object.name==='cart' ) {
+
 			if((parseFloat(k,10)-1.0000000)>=0) {
 				k=0;
 			} 
@@ -82,7 +94,9 @@ ENGINE.Renderer = function( opts ) {
 			Object.setPosition(point[0], point[1], point[2]);
 			Object.pointAt(lookAtPoint[0], lookAtPoint[1], lookAtPoint[2]);
 
-			k=k+window.speed;
+			ENGINE.CalculateSpeed((-1)*10*Object.position[1]);
+			console.log(ENGINE.speed);
+			k=k+ENGINE.speed;
 		}
 	    //Bind it as The Current Buffer  
 	    _gl.bindBuffer(_gl.ARRAY_BUFFER, Object.VertexBuffer);  
@@ -557,6 +571,8 @@ ENGINE.Road.prototype.init = function(camera) {
 		a = this.multiply(this.matrixInversed, temp);
 		this.catmull.addPoint(new vec3.fromValues((-1)*a[0], (-1)*a[1], a[2]), vec3.fromValues((-1)*ENGINE.path.normals[i][0],(-1)*ENGINE.path.normals[i][1],ENGINE.path.normals[i][2]));
 	}
+	var start =  this.catmull.point(0);
+	ENGINE.CalculateSpeed = ENGINE.CalculateSpeed((-1)*10*start[1]);
 }
 
 ENGINE.GUI = function() {
