@@ -11,8 +11,8 @@ var ROLLERCOASTER = (function() {
 		renderer.setSize( window.innerWidth, window.innerHeight );
 	},
 	onDocumentMouseMove = function( event ) {
-        window.y = ( event.clientX - _config.windowHalfX ) ;
-        window.z = ( event.clientY - _config.windowHalfY ) ;
+        ENGINE.MouseX = ( event.clientX - _config.windowHalfX ) ;
+        ENGINE.MouseY = ( event.clientY - _config.windowHalfY ) ;
     },
     switchCameras = function() {
     	var key = _cameras.indexOf(_currentCamera);
@@ -25,6 +25,10 @@ var ROLLERCOASTER = (function() {
 		$(window).keypress(function(e){
 			if(e.which===99) {
 				switchCameras();
+			}
+			console.log(e.which);
+			if(e.which===108) {
+				ENGINE.switchLight();
 			}
 		});
 	},
@@ -52,6 +56,7 @@ var ROLLERCOASTER = (function() {
         camera = new ENGINE.PerspectiveCamera(45.0, 0.1, 2000.0);
         camera.setPosition(0,8,0);
         _cameras.push(camera);
+
         road = new ENGINE.Road({
 	        		name : 'road',
 	        		pos: {
@@ -65,43 +70,9 @@ var ROLLERCOASTER = (function() {
 	        		camera: camera
 	    });
 
-		var numFs = 8;
-  		var radius = 6;
-  		var cos,cos1;
-  		cos = Math.cos(1 * Math.PI * 2 / numFs) * radius;
-  		cos1 = Math.sin(1 * Math.PI * 2 / numFs) * radius;
-  		camera.lookAt(8,6,0);
-        for(var i=0; i<numFs; i++) {
-        	var angle = i * Math.PI * 2 / numFs;
+        camera.lookAt(8,6,0);
 
-	        var minecraft = new ENGINE.BasicMesh({
-	        	pos : {
-	        		x: Math.cos(angle) * radius,
-	        		y: -1,
-	        		z: Math.sin(angle) * radius
-	        	},
-	        	scale : {
-	        		x: 1,
-	        		y: 1,
-	        		z: 1,
-	        	},
-	        	rotation: {
-	        		x: 0,
-	        		y: 0,
-	        		z: 0,
-	        	},
-	        	vertexArr: ENGINE.Cube.Vertices,
-	        	triangleArr: ENGINE.Cube.Triangles,
-	        	textureArr: ENGINE.Cube.Texture,
-				texture: {
-					src: ['textures/Dirt.jpg']
-				}
-	        });
-
-	        // scene.add( minecraft );
-        }
-
-        var plane = new ENGINE.BasicMesh({
+        var plane = new ENGINE.Model({
 	        	pos:{
 	        		x:0,y:0,z:0
 	        	},
@@ -137,7 +108,7 @@ var ROLLERCOASTER = (function() {
 	            'skybox' : 'models/skybox.obj'
 	        },
 	        function(meshes){ 
-	        	var roller = new ENGINE.BasicMesh({
+	        	var roller = new ENGINE.Model({
 	        		name: 'rollercoaster',
 	        		pos: {
 	        			x: 0, y: 0, z: 0
@@ -146,6 +117,7 @@ var ROLLERCOASTER = (function() {
 	        			x: 5, y : 5 , z: 5
 	        		},
 	        		vertexArr : meshes.rollercoaster.vertices,
+	        		vertexNormals: meshes.rollercoaster.vertexNormals,
 	        		triangleArr : meshes.rollercoaster.indices,
 	        		textureArr : meshes.rollercoaster.textures,
 	        		texture : {
@@ -155,7 +127,7 @@ var ROLLERCOASTER = (function() {
 
 	        	scene.add( roller );
 	        	
-	        	var cart = new ENGINE.BasicMesh({
+	        	var cart = new ENGINE.Model({
 	        		name : 'cart',
 	        		pos: {
 	        			x: 0, y: 0, z: 0
@@ -167,6 +139,7 @@ var ROLLERCOASTER = (function() {
 	        			x: 0, y : 0 , z: 0
 	        		},
 	        		vertexArr : meshes.cart.vertices,
+	        		vertexNormals: meshes.cart.vertexNormals,
 	        		triangleArr : meshes.cart.indices,
 	        		textureArr : meshes.cart.textures,
 	        		texture : {
@@ -182,7 +155,7 @@ var ROLLERCOASTER = (function() {
 	        	cameraOnCart = new ENGINE.LookAtCamera(45.0, 0.1, 2000.0, cart);
 	        	_cameras.push(cameraOnCart);
 
-	        	var skybox = new ENGINE.BasicMesh({
+	        	var skybox = new ENGINE.Model({
 	        		name : 'skybox',
 	        		pos: {
 	        			x: 0, y:-100, z: 0
@@ -194,6 +167,7 @@ var ROLLERCOASTER = (function() {
 	        			x: 1, y : 1 , z: 1
 	        		},
 	        		vertexArr : meshes.skybox.vertices,
+	        		vertexNormals: meshes.skybox.vertexNormals,
 	        		triangleArr : meshes.skybox.indices,
 	        		textureArr : meshes.skybox.textures,
 	        		texture : {
@@ -233,8 +207,6 @@ var ROLLERCOASTER = (function() {
 	};
 	
 	return {
-		start : init,
-		currentCamera : function() { return _currentCamera; },
-		gl: function() {return renderer}
+		start : init
 	}
 })();

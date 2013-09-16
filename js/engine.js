@@ -1,5 +1,18 @@
 var ENGINE = ENGINE || {};
 
+ENGINE.isLightEnabled = false;
+
+ENGINE.switchLight = function() {
+	ENGINE.isLightEnabled = !ENGINE.isLightEnabled;
+}
+
+ENGINE.throwError = function(text) {
+	$(function(){
+		console.log($('.engine'));
+		$('.engine').html(text).addClass('on');
+	});
+}
+
 //physics 
 ENGINE.gravityACC = 9.80665;
 ENGINE.cartMass = 500;
@@ -22,8 +35,6 @@ ENGINE.Renderer = function( opts ) {
 	//internal vars
 	var _gl, _canvas, _shaders,
 	TextureImage, Texture, ShaderProgram, VertexPosition, VertexTexture,AspectRatio;
-
-	
 
 	_canvas = document.getElementById('canvas');
 
@@ -53,26 +64,26 @@ ENGINE.Renderer = function( opts ) {
 		ENGINE.aspectRatio = _canvas.width / _canvas.height;
 		this.setViewport(0, 0, _canvas.width, _canvas.height);
 	}
-	var TransformMatrix = mat4.create(),
-	PerspectiveMatrix;
-	window.x = 0;
-	window.y = 0;
-	window.z = 0;
-	window.speed = 0.001;
-	window.calls = 0;
 
- 	var matrix = mat4.create(), point = vec3.create(), lookAtPoint = vec3.create(), normal = vec3.create();
- 	var pmatrix, tmatrix, k=0;
+	var TransformMatrix = mat4.create(),
+	PerspectiveMatrix,
+	matrix = mat4.create(), 
+	point = vec3.create(), 
+	lookAtPoint = vec3.create(), 
+	normal = vec3.create(), 
+	pmatrix, 
+	tmatrix, 
+	k=0;
+
+	ENGINE.MouseX = 0;
+	ENGINE.MouseY = 0;
+
 	this.renderObject = function(Object, TexturesArray, camera, road) {
 		PerspectiveMatrix = camera.projectionMatrix;
 
 		Object.updateMatrix();
 		Object.invertMatrix();
 
-		
-		if ( Object.name==='rollercoaster' ) { 
-			//console.log(Object.matrix);
-		}
 		if ( Object.name==='cart' ) {
 
 			if((parseFloat(k,10)-1.0000000)>=0) {
@@ -81,9 +92,7 @@ ENGINE.Renderer = function( opts ) {
 			point = road.catmullPoints.point(k);
 			normal = road.catmullNormals.point(k);
 			lookAtPoint = road.catmullPoints.point(k+0.05);
-			Object.forward=vec3.fromValues(0,0,-1);
 			Object.up = normal;
-			//console.log(k);
 			if(k>0.92) {
 				lookAtPoint = road.catmullPoints.point(0.05); //don't look under cart!
 			}
@@ -91,7 +100,6 @@ ENGINE.Renderer = function( opts ) {
 			Object.pointAt(lookAtPoint[0], lookAtPoint[1], lookAtPoint[2]);
 
 			ENGINE.CalculateSpeed((-1)*10*Object.position[1]);
-			//console.log(ENGINE.speed);
 			k=k+ENGINE.speed;
 		}
 	    //Bind it as The Current Buffer  
@@ -125,9 +133,7 @@ ENGINE.Renderer = function( opts ) {
 	  
 	    //Update The Texture Sampler in the fragment shader to use slot 0  
 	    _gl.uniform1i(_gl.getUniformLocation(ShaderProgram, "uSampler"), 0);  
-	  
-
-	    
+	  	    
 	}
 	this.render  = function ( scene, camera, road) {
 		if ( camera instanceof ENGINE.Camera === false ) {
@@ -182,6 +188,9 @@ ENGINE.Renderer = function( opts ) {
 	function initGL() {
 	 	_gl = create3DContext(_canvas);
 	 	ENGINE.__gl = _gl;
+	 	if(!ENGINE.__gl) {
+	 		ENGINE.throwError('Niestety twoja karta graficzna jest zbyt lame');
+	 	}
 
 	 	//set vars
 	 	ENGINE.RepeatWrapping = ENGINE.__gl.REPEAT;
@@ -193,7 +202,6 @@ ENGINE.Renderer = function( opts ) {
 	_shaders.init();
 	_gui = new ENGINE.GUI();
 	ENGINE._gui = _gui;
-	//ENGINE._gui.add(window, 'speed');
 
 	var shaders_obj = _shaders.create();
 	ShaderProgram = shaders_obj.ShaderProgram;
@@ -218,23 +226,16 @@ ENGINE.Object3D = function() {
 	this.parent = undefined;
 	this.children = [];
 
-	this.position = vec3.create();
-	vec3.set(this.position,0,0,0);
-	this.scale = vec3.create();
-	vec3.set(this.scale,1,1,1);
-	this.rotation = vec3.create();
-	vec3.set(this.rotation,0,0,0);
+	this.position = vec3.fromValues(0,0,0);
+	this.scale = vec3.fromValues(1,1,1);
+	this.rotation = vec3.fromValues(0,0,0);
 
-	this.up = vec3.create();
-	vec3.set(this.up, 0,1,0);
+	this.up = vec3.fromValues(0,1,0);
 
-	this._static = true; // if there is no animation don't update matrixes all the time
-	this.matrixInit = false; 
 	this.matrix = mat4.create();
 	this.matrixInversed = mat4.create();
 
 	this.matrixWorld = mat4.create();
-	this.matrixWorldNeedsUpdate = true;
 
 };
 
@@ -266,7 +267,6 @@ ENGINE.Object3D.prototype = {
 			this.lookAt(this.lookAtCoor[0],this.lookAtCoor[1],this.lookAtCoor[2]);
 			this.matrix=this.lookAtMatrix;
 		}
-		this.matrixWorldNeedsUpdate = true;
 	}
 };
 
@@ -357,11 +357,10 @@ ENGINE.PerspectiveCamera.prototype.updateProjectionMatrix = function () {
 }
 
 ENGINE.PerspectiveCamera.prototype.updateView = function () {
-	this.rotateY(window.x);
-	if(window.z<1) {
-		window.z=1;
+	if(ENGINE.MouseY<1) {
+		ENGINE.MouseY=1;
 	}
-	this.setPosition(( window.y - this.position[0] ) * .05,(  window.z - this.position[1] ) * .05,15);
+	this.setPosition(( ENGINE.MouseX - this.position[0] ) * .05,(  ENGINE.MouseY - this.position[1] ) * .05,15);
 }
 
 ENGINE.RelativeCamera = function( fov, near, far, parent) {
@@ -387,14 +386,11 @@ ENGINE.RelativeCamera.prototype.updateView = function () {
 	var parent  = this.parent, nextPoint = this.parent.nextPoint !== "undefined" ? this.parent.nextPoint : false,
 	normal = vec3.create();
 	vec3.normalize(normal, parent.up);
-	//console.log(normal);
 	this.position[0] = (-1)*this.parent.position[0];
 	this.position[1] = (-1)*this.parent.position[1];
 	this.position[2] = (-1)*this.parent.position[2];
 	vec3.scale(normal, normal, 1.5);
 	vec3.add(this.position, this.position, normal);
-
-
 
 	if(nextPoint) {
 		this.lookAt(nextPoint[0], nextPoint[1], nextPoint[2]);
@@ -421,11 +417,10 @@ ENGINE.LookAtCamera.prototype.lookAt = function ( x,y,z ) {
 ENGINE.LookAtCamera.prototype.updateView = function () { 
 	var parent  = this.parent;
 
-	this.rotateY(window.x);
-	if(window.z<2) {
-		window.z=2;
+	if(ENGINE.MouseY<2) {
+		ENGINE.MouseY=2;
 	}
-	this.setPosition(( window.y - this.position[0] ) * .05,(  window.z - this.position[1] ) * .05,15);
+	this.setPosition(( ENGINE.MouseX - this.position[0] ) * .05,(  ENGINE.MouseY - this.position[1] ) * .05,15);
 	this.lookAt(this.parent.position[0], (-1)*this.parent.position[1], this.parent.position[2]);
 
 }
@@ -491,7 +486,7 @@ ENGINE.Shaders = function() {
 
 }
 
-ENGINE.BasicMesh = function(opts) {
+ENGINE.Model = function(opts) {
 	ENGINE.Object3D.call(this);
 
 	this.name = opts.name || '';
@@ -530,10 +525,10 @@ ENGINE.BasicMesh = function(opts) {
 
 }
 
-ENGINE.BasicMesh.prototype = Object.create( ENGINE.Object3D.prototype );
+ENGINE.Model.prototype = Object.create( ENGINE.Object3D.prototype );
 
 ENGINE.Road = function(opts) {
-	ENGINE.BasicMesh.call(this, opts);
+	ENGINE.Model.call(this, opts);
 
 	this.pathPoints = opts.pathPoints || [];
 	this.pathNormals = opts.pathNormals || [];
@@ -543,7 +538,7 @@ ENGINE.Road = function(opts) {
 	this.init(opts.camera);
 }
 
-ENGINE.Road.prototype = Object.create( ENGINE.BasicMesh.prototype );
+ENGINE.Road.prototype = Object.create( ENGINE.Model.prototype );
 
 ENGINE.Road.prototype.updateMatrix = function() {
 	return;
@@ -603,17 +598,14 @@ ENGINE.Texture = function(url, opt) {
     };
     this.image.src = url;
     this.loadTexture = function(Img, opts){  
-	    //Create a new Texture and Assign it as the active one  
 	    var TempTex = _gl.createTexture();  
 	    _gl.bindTexture(_gl.TEXTURE_2D, TempTex);    
 	      
 	    var wrapS = opt.wrapS !== undefined ? opt.wrapS : ENGINE.RepeatWrapping,
 	    wrapT = opt.wrapT !== undefined ? opt.wrapT : ENGINE.RepeatWrapping;
 	      
-	    //Load in The Image  
 	    _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, Img);    
 	      
-	    //Setup Scaling properties  
 	    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
   		_gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR_MIPMAP_NEAREST);
 
@@ -621,7 +613,6 @@ ENGINE.Texture = function(url, opt) {
 		_gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_WRAP_T, wrapT);
 	    _gl.generateMipmap(_gl.TEXTURE_2D);   
 	      
-	    //Unbind the texture and return it.  
 	    _gl.bindTexture(_gl.TEXTURE_2D, null);  
 	    return TempTex;  
 	}; 

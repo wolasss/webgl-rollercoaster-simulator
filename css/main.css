@@ -116,11 +116,20 @@ html {
 }
 
 /* line 40, ../scss/main.scss */
-.webgl-nosupport {
+.webgl-nosupport, .engine {
   position: absolute;
   width: 100%;
   text-align: center;
   top: 0;
   left: 0;
   z-index: 999;
+}
+
+/* line 49, ../scss/main.scss */
+.engine {
+  display: none;
+}
+/* line 51, ../scss/main.scss */
+.engine.on {
+  display: block;
 }

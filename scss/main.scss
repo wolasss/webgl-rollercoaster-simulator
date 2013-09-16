@@ -37,7 +37,7 @@ html {
 	display:none;
 }
 
-.webgl-nosupport {
+.webgl-nosupport, .engine {
 	position:absolute;
 	width:100%;
 	text-align:center;
@@ -45,4 +45,12 @@ html {
 	left:0;
 	z-index:999;
 }
+
+.engine {
+	display: none;
+	&.on {
+		display:block;
+	}
+}
+
 
