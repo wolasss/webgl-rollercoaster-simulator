@@ -84,10 +84,7 @@ ENGINE.Renderer = function( opts ) {
 			Object.forward=vec3.fromValues(0,0,-1);
 			Object.up = normal;
 			//console.log(k);
-			if(k>0.9) {
-				//console.log('position: ', Object.position);
-				//console.log('rotation: ', Object.rotation); 
-				//debugger; 
+			if(k>0.92) {
 				lookAtPoint = road.catmullPoints.point(0.05); //don't look under cart!
 			}
 			Object.setPosition(point[0], point[1], point[2]);
@@ -286,7 +283,6 @@ ENGINE.Object3D.prototype.pointAt = function (x,y,z,up) {
 	this.pointAtMatrix = mat4.create();
 	this.lookAtCoor = vec3.fromValues(x,y,z);
 	mat4.lookAt(this.pointAtMatrix, position, vector, this.up);
-	//mat4.invert(this.pointAtMatrix,this.pointAtMatrix);
 };
 
 ENGINE.Scene = function() {
@@ -388,10 +384,17 @@ ENGINE.RelativeCamera.prototype.lookAt = function ( x,y,z, up ) {
 };
 
 ENGINE.RelativeCamera.prototype.updateView = function () { 
-	var parent  = this.parent, nextPoint = this.parent.nextPoint !== "undefined" ? this.parent.nextPoint : false;
+	var parent  = this.parent, nextPoint = this.parent.nextPoint !== "undefined" ? this.parent.nextPoint : false,
+	normal = vec3.create();
+	vec3.normalize(normal, parent.up);
+	//console.log(normal);
 	this.position[0] = (-1)*this.parent.position[0];
-	this.position[1] = (-1)*this.parent.position[1]+2;
+	this.position[1] = (-1)*this.parent.position[1];
 	this.position[2] = (-1)*this.parent.position[2];
+	vec3.scale(normal, normal, 1.5);
+	vec3.add(this.position, this.position, normal);
+
+
 
 	if(nextPoint) {
 		this.lookAt(nextPoint[0], nextPoint[1], nextPoint[2]);
@@ -569,8 +572,8 @@ ENGINE.Road.prototype.init = function(camera) {
 		var a = vec4.create();
 		temp = vec4.fromValues(ENGINE.path.points[i][0], ENGINE.path.points[i][1], ENGINE.path.points[i][2], 1);
 		a = this.multiply(this.matrixInversed, temp);
-		this.catmullPoints.addPoint(new vec3.fromValues((-1)*a[0], (-1)*a[1], a[2]));
-		this.catmullNormals.addPoint(vec3.fromValues((-1)*ENGINE.path.normals[i][0],(-1)*ENGINE.path.normals[i][1],ENGINE.path.normals[i][2]));
+		this.catmullPoints.addPoint(new vec3.fromValues((-1)*a[0], (-1)*a[1], (-1)*a[2]));
+		this.catmullNormals.addPoint(vec3.fromValues((-1)*ENGINE.path.normals[i][0],(-1)*ENGINE.path.normals[i][1],(-1)*ENGINE.path.normals[i][2]));
 	}
 	var start =  this.catmullPoints.point(0);
 	ENGINE.CalculateSpeed = ENGINE.CalculateSpeed((-1)*10*start[1]);
