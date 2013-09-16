@@ -189,7 +189,7 @@ ENGINE.Renderer = function( opts ) {
 	 	_gl = create3DContext(_canvas);
 	 	ENGINE.__gl = _gl;
 	 	if(!ENGINE.__gl) {
-	 		ENGINE.throwError('Niestety twoja karta graficzna jest zbyt lame');
+	 		ENGINE.throwError('Niestety, nie mogę załadować kontekstu WebGL.');
 	 	}
 
 	 	//set vars
@@ -302,6 +302,7 @@ ENGINE.Scene.prototype.add = function(obj) {
 	obj.VertexBuffer = _gl.createBuffer();
 	obj.TextureBuffer = _gl.createBuffer();
 	obj.TriangleBuffer = _gl.createBuffer();
+	obj.NormalBuffer = _gl.createBuffer();
 
 	_gl.bindBuffer(_gl.ARRAY_BUFFER, obj.VertexBuffer);  
 	_gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(obj.Vertices), _gl.STATIC_DRAW); 
@@ -311,6 +312,11 @@ ENGINE.Scene.prototype.add = function(obj) {
 
 	_gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, obj.TriangleBuffer); 
 	_gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(obj.Triangles), _gl.STATIC_DRAW);
+
+	_gl.bindBuffer(_gl.ARRAY_BUFFER, obj.NormalBuffer);
+  	_gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(obj.vertexNormals), _gl.STATIC_DRAW);
+
+  	obj.NormalBuffer.numItems = obj.vertexNormals.length;
 
 	return this.__objects.push(obj);
 }
@@ -509,6 +515,7 @@ ENGINE.Model = function(opts) {
     this.Triangles = opts.triangleArr;
     this.triangleCount = opts.triangleArr.length;
     this.Texture = opts.textureArr || [];
+    this.vertexNormals = opts.vertexNormals || [];
     opts.texture = opts.texture || {};
     this.texturesArray = opts.texture.src;
     this.offset = opts.texture.offset;
