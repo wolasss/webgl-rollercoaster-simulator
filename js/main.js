@@ -108,6 +108,7 @@ var ROLLERCOASTER = (function() {
 	            'skybox' : 'models/skybox.obj'
 	        },
 	        function(meshes){ 
+	        	console.log(meshes);
 	        	var roller = new ENGINE.Model({
 	        		name: 'rollercoaster',
 	        		pos: {

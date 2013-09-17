@@ -15,31 +15,47 @@
         <link rel="stylesheet" href="css/main.css">
         <script src="js/vendor/modernizr-2.6.2.min.js"></script>
         <script id="VertexShader" type="x-shader/x-vertex">  
-  
         attribute highp vec3 VertexPosition;
         attribute highp vec2 TextureCoord;
-        
+        attribute highp vec3 aVertexNormal;
         
         uniform highp mat4 TransformationMatrix;
         uniform highp mat4 PerspectiveMatrix;
-        
+        uniform highp mat4 uNMatrix;
+        uniform highp vec3 uAmbientColor;
+        uniform highp bool uUseLighting;
+        uniform highp vec3 uLightingDirection;
+        uniform highp vec3 uDirectionalColor;
+
+        varying highp vec3 vLightWeighting;
         varying highp vec2 vTextureCoord;
         
         void main(void) {
             gl_Position = PerspectiveMatrix * TransformationMatrix * vec4(VertexPosition, 1.0);
             vTextureCoord = TextureCoord;
+
+            if (!uUseLighting) {
+                vLightWeighting = vec3(1.0, 1.0, 1.0);
+            } else {
+                vec4 transformedNormal = uNMatrix * vec4(aVertexNormal, 1.0);
+                float directionalLightWeighting = max(dot(transformedNormal.xyz, uLightingDirection), 0.0);
+                vLightWeighting = uAmbientColor + uDirectionalColor * directionalLightWeighting;
+            }
         }
     </script>  
-    
-    <script id="FragmentShader" type="x-shader/x-fragment">  
-        varying highp vec2 vTextureCoord;
+
+    <script id="FragmentShader" type="x-shader/x-fragment"> 
+        precision mediump float;
+        
+        varying vec2 vTextureCoord;
+        varying vec3 vLightWeighting;
         
         uniform sampler2D uSampler;
         
         void main(void) {
-            highp vec4 texelColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
-            gl_FragColor = texelColor;
-        }     
+            vec4 texelColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+            gl_FragColor = vec4(texelColor.rgb * vLightWeighting, texelColor.a);
+        }
     </script>  
     </head>
     <body>

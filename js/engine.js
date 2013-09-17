@@ -34,7 +34,7 @@ ENGINE.Renderer = function( opts ) {
 
 	//internal vars
 	var _gl, _canvas, _shaders,
-	TextureImage, Texture, ShaderProgram, VertexPosition, VertexTexture,AspectRatio;
+	TextureImage, Texture, ShaderProgram, VertexPosition, VertexTexture, AspectRatio, VertexNormals, lightingDirection, adjustedLD, flatLD, normalMatrix = mat4.create();
 
 	_canvas = document.getElementById('canvas');
 
@@ -84,6 +84,10 @@ ENGINE.Renderer = function( opts ) {
 		Object.updateMatrix();
 		Object.invertMatrix();
 
+		mat4.multiply(matrix, camera.matrixInversed, Object.matrixInversed);   
+	   	_gl.uniformMatrix4fv(pmatrix, false, PerspectiveMatrix);    
+	    _gl.uniformMatrix4fv(tmatrix, false, matrix);  
+
 		if ( Object.name==='cart' ) {
 
 			if((parseFloat(k,10)-1.0000000)>=0) {
@@ -102,38 +106,49 @@ ENGINE.Renderer = function( opts ) {
 			ENGINE.CalculateSpeed((-1)*10*Object.position[1]);
 			k=k+ENGINE.speed;
 		}
-	    //Bind it as The Current Buffer  
-	    _gl.bindBuffer(_gl.ARRAY_BUFFER, Object.VertexBuffer);  
-	  	    
-	    //Connect Buffer To Shader's attribute  
+
+		_gl.bindBuffer(_gl.ARRAY_BUFFER, Object.VertexBuffer);  
 	    _gl.vertexAttribPointer(VertexPosition, 3, _gl.FLOAT, false, 0, 0);  
 	  
-	    _gl.bindBuffer(_gl.ARRAY_BUFFER, Object.TextureBuffer);  
-	    _gl.vertexAttribPointer(VertexTexture, 2, _gl.FLOAT, false, 0, 0);
+		_gl.bindBuffer(_gl.ARRAY_BUFFER, Object.TextureBuffer);  
+		_gl.vertexAttribPointer(VertexTexture, 2, _gl.FLOAT, false, 0, 0);
 
- 
-	    _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, Object.TriangleBuffer); 
-        //draw the triangle
-       
-        mat4.multiply(matrix, camera.matrixInversed, Object.matrixInversed);   
+		_gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, Object.TriangleBuffer); 
 
-	    //Set slot 0 as the active Texture  
-	    _gl.activeTexture(_gl.TEXTURE0);  
+		for(var i=0, len=TexturesArray.length; i<len; i++) {
+		    	_gl.bindTexture(_gl.TEXTURE_2D, TexturesArray[i].glTex);  
+	    		_gl.uniform1i(_gl.getUniformLocation(ShaderProgram, "uSampler"), 0); 
 
-	   	_gl.uniformMatrix4fv(pmatrix, false, PerspectiveMatrix);    
-	    _gl.uniformMatrix4fv(tmatrix, false, matrix);  
-	    //Load in the Texture To Memory
-	    var offset;
-	    if(this.isRendered!=false) {
-		    for(var i=0, len=TexturesArray.length; i<len; i++) {
-		    	_gl.bindTexture(_gl.TEXTURE_2D, TexturesArray[i].glTex); 
-		    	_gl.drawElements(_gl.TRIANGLES, (Object.offset ? Object.offset : Object.Triangles.length), _gl.UNSIGNED_SHORT, i*6*2);   
-		    }
-		}
-	  
-	    //Update The Texture Sampler in the fragment shader to use slot 0  
-	    _gl.uniform1i(_gl.getUniformLocation(ShaderProgram, "uSampler"), 0);  
-	  	    
+	    		if(Object.offset) {
+			    	//_gl.bindBuffer(_gl.ARRAY_BUFFER, Object.NormalBuffer);
+					//_gl.vertexAttribPointer(ShaderProgram.VertexNormals, Object.Triangles.length, _gl.FLOAT, false, 0, 0);
+				}
+
+				_gl.uniform1i(ShaderProgram.useLightingUniform, ENGINE.isLightEnabled);
+					if (ENGINE.isLightEnabled) {
+					  _gl.uniform3f(ShaderProgram.ambientColorUniform, 0.4, 0.4, 0.4);
+
+					  lightingDirection = vec3.fromValues(-5, -5, -10);
+					  adjustedLD = vec3.create();
+					  vec3.normalize(adjustedLD, lightingDirection);
+
+					  flatLD = new Float32Array(adjustedLD);
+					  _gl.uniform3fv(ShaderProgram.lightingDirectionUniform, flatLD);
+
+					  _gl.uniform3f(ShaderProgram.directionalColorUniform, 0.9, 0.9, 0.7);
+				}
+
+				normalMatrix = mat4.create();
+				mat4.transpose(normalMatrix, Object.matrix);
+				_gl.uniformMatrix4fv(ShaderProgram.nMatrixUniform, false, new Float32Array(normalMatrix));
+				
+		    	if(Object.offset) {
+		    		_gl.drawElements(_gl.TRIANGLES, Object.offset, _gl.UNSIGNED_SHORT, i*2*Object.offset);   
+		    	} else {
+		    		_gl.drawElements(_gl.TRIANGLES, Object.Triangles.length, _gl.UNSIGNED_SHORT, 0);   
+		    	}
+		    	
+		}	  	    
 	}
 	this.render  = function ( scene, camera, road) {
 		if ( camera instanceof ENGINE.Camera === false ) {
@@ -310,13 +325,14 @@ ENGINE.Scene.prototype.add = function(obj) {
 	_gl.bindBuffer(_gl.ARRAY_BUFFER, obj.TextureBuffer);  
 	_gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(obj.Texture), _gl.STATIC_DRAW);  
 
+	_gl.bindBuffer(_gl.ARRAY_BUFFER, obj.NormalBuffer);
+  	_gl.bufferData(_gl.ARRAY_BUFFER, new Uint16Array(obj.Triangles), _gl.STATIC_DRAW);
+
 	_gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, obj.TriangleBuffer); 
 	_gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(obj.Triangles), _gl.STATIC_DRAW);
 
-	_gl.bindBuffer(_gl.ARRAY_BUFFER, obj.NormalBuffer);
-  	_gl.bufferData(_gl.ARRAY_BUFFER, new Float32Array(obj.vertexNormals), _gl.STATIC_DRAW);
-
-  	obj.NormalBuffer.numItems = obj.vertexNormals.length;
+  	obj.NormalBuffer.numItems = obj.vertexNormals.length / 3;
+  	obj.NormalBuffer.itemSize = 3;
 
 	return this.__objects.push(obj);
 }
@@ -465,6 +481,7 @@ ENGINE.Shaders = function() {
 		    this.VShader = _gl.createShader(_gl.VERTEX_SHADER);  
 		    _gl.shaderSource(this.VShader, Code);  
 		    _gl.compileShader(this.VShader);  
+		    console.log(_gl.compileShader(this.VShader));
 		}
 	}
 
@@ -476,7 +493,7 @@ ENGINE.Shaders = function() {
 		    _gl.attachShader(ShaderProgram, this.VShader);  
 		    _gl.linkProgram(ShaderProgram);  
 		    _gl.useProgram(ShaderProgram);  
-		    obj.ShaderProgram = ShaderProgram;
+		    
 
 		    //Link Vertex Position Attribute from Shader  
 		    VertexPosition = _gl.getAttribLocation(ShaderProgram, "VertexPosition");  
@@ -484,9 +501,22 @@ ENGINE.Shaders = function() {
 		    obj.VertexPosition = VertexPosition;
 		      
 		    //Link Texture Coordinate Attribute from Shader  
-		    VertexTexture = _gl.getAttribLocation(ShaderProgram, "TextureCoord");  
+		    VertexNormals = _gl.getAttribLocation(ShaderProgram, "aVertexNormal");
+            _gl.enableVertexAttribArray(ShaderProgram.VertexNormals);
+            ShaderProgram.VertexNormals = VertexNormals;
+
+            VertexTexture = _gl.getAttribLocation(ShaderProgram, "TextureCoord");  
 		    _gl.enableVertexAttribArray(VertexTexture); 
 		    obj.VertexTexture = VertexTexture;
+
+            ShaderProgram.samplerUniform = _gl.getUniformLocation(ShaderProgram, "uSampler");
+            ShaderProgram.useLightingUniform = _gl.getUniformLocation(ShaderProgram, "uUseLighting");
+            ShaderProgram.ambientColorUniform = _gl.getUniformLocation(ShaderProgram, "uAmbientColor");
+            ShaderProgram.lightingDirectionUniform = _gl.getUniformLocation(ShaderProgram, "uLightingDirection");
+            ShaderProgram.directionalColorUniform = _gl.getUniformLocation(ShaderProgram, "uDirectionalColor");
+
+            obj.ShaderProgram = ShaderProgram;
+
 		    return obj;
 	}
 
