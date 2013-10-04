@@ -8,7 +8,6 @@ ENGINE.switchLight = function() {
 
 ENGINE.throwError = function(text) {
 	$(function(){
-		console.log($('.engine'));
 		$('.engine').html(text).addClass('on');
 	});
 }
@@ -28,11 +27,8 @@ ENGINE.CalculateSpeed = function(height) {
 
 //renderer 
 ENGINE.Renderer = function( opts ) {
-	//params
 	opts = opts || {};
-	//vars
 
-	//internal vars
 	var _gl, _canvas, _shaders,
 	TextureImage, Texture, ShaderProgram, VertexPosition, VertexTexture, AspectRatio, VertexNormals, lightingDirection, adjustedLD, flatLD, normalMatrix = mat4.create();
 
@@ -43,15 +39,11 @@ ENGINE.Renderer = function( opts ) {
 	}
 
 	this.setViewport = function ( x, y, width, height ) {
-
 		_viewportX = x !== undefined ? x : 0;
 		_viewportY = y !== undefined ? y : 0;
-
 		_viewportWidth = width !== undefined ? width : _canvas.width;
 		_viewportHeight = height !== undefined ? height : _canvas.height;
-
 		_gl.viewport( _viewportX, _viewportY, _viewportWidth, _viewportHeight );
-
 	};
 
 	this.setSize = function(width, height) {
@@ -73,7 +65,7 @@ ENGINE.Renderer = function( opts ) {
 	normal = vec3.create(), 
 	pmatrix, 
 	tmatrix, 
-	k=0;
+	time=0; // 0 - start 1 - end.
 
 	ENGINE.MouseX = 0;
 	ENGINE.MouseY = 0;
@@ -90,21 +82,21 @@ ENGINE.Renderer = function( opts ) {
 
 		if ( Object.name==='cart' ) {
 
-			if((parseFloat(k,10)-1.0000000)>=0) {
-				k=0;
+			if((parseFloat(time,10)-1.0000000)>=0) {
+				time=0;
 			} 
-			point = road.catmullPoints.point(k);
-			normal = road.catmullNormals.point(k);
-			lookAtPoint = road.catmullPoints.point(k+0.05);
+			point = road.catmullPoints.point(time);
+			normal = road.catmullNormals.point(time);
+			lookAtPoint = road.catmullPoints.point(time+0.05);
 			Object.up = normal;
-			if(k>0.92) {
+			if(time>0.92) {
 				lookAtPoint = road.catmullPoints.point(0.05); //don't look under cart!
 			}
 			Object.setPosition(point[0], point[1], point[2]);
 			Object.pointAt(lookAtPoint[0], lookAtPoint[1], lookAtPoint[2]);
 
 			ENGINE.CalculateSpeed((-1)*10*Object.position[1]);
-			k=k+ENGINE.speed;
+			time=time+ENGINE.speed;
 		}
 
 		_gl.bindBuffer(_gl.ARRAY_BUFFER, Object.VertexBuffer);  
@@ -169,7 +161,6 @@ ENGINE.Renderer = function( opts ) {
 		camera.invertMatrix();
 		
 		for(var i=0, len=renderList.length; i<len; i++) {
-			//render objects
 			this.renderObject(renderList[i], renderList[i].activeTextures, camera, road);
 		} 
 
@@ -194,7 +185,6 @@ ENGINE.Renderer = function( opts ) {
 		_gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
 		_gl.clearDepth( 1 );
 		_gl.clearStencil( 0 );
-
 		_gl.enable( _gl.DEPTH_TEST );//Enable Depth Testing
 		_gl.depthFunc( _gl.LEQUAL ); // Near things obscure far things//Set Perspective View
 	
@@ -350,8 +340,6 @@ ENGINE.Camera = function () {
 
 ENGINE.Camera.prototype = Object.create( ENGINE.Object3D.prototype );
 
-
-
 ENGINE.PerspectiveCamera = function( fov, near, far) {
 	ENGINE.Camera.call( this );
 
@@ -411,7 +399,7 @@ ENGINE.RelativeCamera.prototype.updateView = function () {
 	this.position[0] = (-1)*this.parent.position[0];
 	this.position[1] = (-1)*this.parent.position[1];
 	this.position[2] = (-1)*this.parent.position[2];
-	vec3.scale(normal, normal, 1.5);
+	vec3.scale(normal, normal, 2);
 	vec3.add(this.position, this.position, normal);
 
 	if(nextPoint) {
@@ -441,7 +429,7 @@ ENGINE.LookAtCamera.prototype.updateView = function () {
 
 	if(ENGINE.MouseY<2) {
 		ENGINE.MouseY=2;
-	}
+	} //don't look under plane
 	this.setPosition(( ENGINE.MouseX - this.position[0] ) * .05,(  ENGINE.MouseY - this.position[1] ) * .05,15);
 	this.lookAt(this.parent.position[0], (-1)*this.parent.position[1], this.parent.position[2]);
 
@@ -529,7 +517,6 @@ ENGINE.Model = function(opts) {
 	opts.pos = opts.pos || {};
 	opts.scale = opts.scale || {};
 	opts.rotation = opts.rotation || {};
-	//todo! mniejsze niz zero odpadaja ten warunke...
 	vec3.set(this.position, (opts.pos.x ? opts.pos.x : 0),(opts.pos.y ? opts.pos.y : 0),(opts.pos.z ? opts.pos.z : 0));
 	vec3.set(this.scale, (opts.scale.x ? opts.scale.x : 1),(opts.scale.y ? opts.scale.y : 1),(opts.scale.z ? opts.scale.z : 1));
 	opts.rotation = {

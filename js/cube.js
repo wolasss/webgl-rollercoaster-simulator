@@ -1,9 +1,9 @@
 var ENGINE = ENGINE || {};
 
-
+//geometry only for debug puroposes.
 ENGINE.Cube = {
     Rotation : 0,
-    Vertices : [ // X, Y, Z Coordinates
+    Vertices : [ 
     
         1.0,  1.0,  -1.0,  
          1.0, -1.0,  -1.0,  
@@ -46,9 +46,7 @@ ENGINE.Cube = {
         -1.0, -1.0, -1.0  
     
     ],
-    Triangles : [ // Also in groups of threes to define the three points of each triangle
-        //The numbers here are the index numbers in the vertex array
-        
+    Triangles : [         
         //Front
         
         0, 1, 2,
@@ -80,9 +78,7 @@ ENGINE.Cube = {
         21, 22, 23
         
     ],
-    Texture : [ //This array is in groups of two, the x and y coordinates (a.k.a U,V) in the texture
-        //The numbers go from 0.0 to 1.0, One pair for each vertex
-        
+    Texture : [         
          //Front
          
          1.0, 1.0,  

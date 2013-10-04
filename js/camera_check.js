@@ -7,7 +7,7 @@
         for(var i=0; i<numFs; i++) {
         	var angle = i * Math.PI * 2 / numFs;
 
-	        var minecraft = new ENGINE.BasicMesh({
+	        var minecraft = new ENGINE.Model({
 	        	pos : {
 	        		x: Math.cos(angle) * radius,
 	        		y: -1,
